@@ -16,24 +16,24 @@ typedef struct param {
 #define FUNC_TYPE    1000005
 
 typedef struct typeinfo {
-   int basetype;
-   union {
-      struct classinfo {
-	 struct sym_table *st;
-	 } c;
-      struct arrayinfo {
-         int size;
-	 struct typeinfo *elemtype;
-         }a;
-      struct funcinfo {
-	 char *name; /* ? */
-	 struct sym_table *st;
-	 struct typeinfo *returntype;
-	 int nparams;
-	 struct param *parameters;
-	 }f;
-      } u;
-   } *typeptr;
+	int basetype;
+	union {
+		struct classinfo {
+			struct sym_table *st;
+		} c;
+		struct arrayinfo {
+			int size;
+			struct typeinfo *elemtype;
+		}a;
+		struct funcinfo {
+			char *name; /* ? */
+			struct sym_table *st;
+			struct typeinfo *returntype;
+			int nparams;
+			struct param *parameters;
+		}f;
+	} u;
+} *typeptr;
 
 extern struct typeinfo integer_type;
 extern struct sym_table *foo;

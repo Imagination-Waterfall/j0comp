@@ -61,6 +61,13 @@ typeptr alcconsttype(struct tree * r, struct tree * p, SymbolTable st)
    /* fill in return type and paramlist by traversing subtrees */
    return rv;
 }
+
+typeptr alcclasstype (SymbolTable st, int type){
+	typeptr rv = alctype(type);
+	rv->u.c.st = st;
+    /* fill in return type and paramlist by traversing subtrees */
+    return rv;
+}
 char *typename(typeptr t)
 {
    if (!t) return "(NULL)";

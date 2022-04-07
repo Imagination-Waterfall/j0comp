@@ -20,7 +20,6 @@ typedef struct sym_table {
  */
 typedef struct sym_entry {
    SymbolTable table;			/* what symbol table do we belong to*/
-   SymbolTable scope;			/*this is a symbol with its own scope*/
    char *s;				/* string */
    /* more symbol attributes go here for code generation */
    typeptr type;

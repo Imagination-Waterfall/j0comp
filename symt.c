@@ -17,6 +17,7 @@ void dovariabledeclarator(struct tree * n);
 void semanticerror(char *s, struct tree* n);
 extern void freetree(struct tree *);
 extern typeptr alcfunctype(struct tree*, struct tree*, SymbolTable);
+extern typeptr alcclasstype (SymbolTable, int);
 int errors = 0;
 enum nonTerm{ClassDecl = 1000, ClassBody, ClassBodyDecls, ClassBodyDecl,FieldDecl,
 	Type, Name, QualifiedName, VarDecls, VarDeclarator, MethodReturnVal, MethodDecl,
@@ -117,12 +118,23 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type)
    se->table = st;
    st->tbl[h] = se;
    se->s = strdup(s);
-   if(type != MethodDecl || type != ConstructorDecl){
-	   se->type = alctype(type);
-   }
    st->nEntries++;
-   if(children != NULL){
-	   se->scope = children;
+   switch(type){
+	   case ArrayPackage:
+	   case StringPackage:
+	   case System:
+	   case ClassDecl:
+	   case InputStream:{
+		   se->type = alcclasstype(children, type);
+		   break;
+	   }
+	   case MethodDecl:
+	   case ConstructorDecl:{
+		   se->type = alcclasstype(children, type);
+		   break;
+	   }
+	   default:
+	   se->type = alctype(type);
    }
    return 1;
 }
@@ -272,6 +284,7 @@ void populate_symboltables(struct tree * n)
 	 case FormalParm: {
 		 int type = n->kids[0]->leaf->category;
 		 char *varName = n->kids[1]->leaf->text;
+		 //printf("%s\n", varName);
          //insert_vars(n, type);
 		 if(insert_sym(current, varName, NULL, type) == 0){
 			 semanticerror("Symbol redefined", n->kids[1]);
@@ -279,7 +292,7 @@ void populate_symboltables(struct tree * n)
          break;
      }
 	 case IDENTIFIER:{
-		 //check symbol table
+		 /*//check symbol table
 		 //generic check
 		 //printf("%s\n", n->leaf->text);
 		 SymbolTable check = current;
@@ -325,7 +338,7 @@ void populate_symboltables(struct tree * n)
 			semanticerror("Symbol Undeclared", n);
 		}
 		 //predefined check
-		 break;
+		 break;*/
 	 }
    }
    /* visit children */
@@ -383,18 +396,18 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 			   }
 			   case MethodDecl:{
 				   s = "Method";
-				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
+				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
 				   break;
 			   }
 			   case ConstructorDecl:{
 				   s = "Constructor";
-				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
+				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
 				   break;
 			   }
 			   default:{
 				   if(ste->type->basetype >= ArrayPackage && ste->type->basetype <= set){
 					   s = "Package";
-					   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
+					   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
 				   }
 			   }
 		   }

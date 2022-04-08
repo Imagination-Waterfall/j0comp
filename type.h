@@ -15,6 +15,8 @@ typedef struct param {
 #define DOUBLE_TYPE 1000004
 #define FUNC_TYPE    1000005
 
+paramlist head;
+
 typedef struct typeinfo {
 	int basetype;
 	union {

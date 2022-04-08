@@ -1,6 +1,20 @@
 /*enum tokens {
 END = -1, ERR = 257, IDENTIFIER = 258, IDENTIFIER, BOOLEAN, BREAK, CASE, CHAR, CLASS, CONTINUE, DEFAULT, DOUBLE, ELSE, FLOAT, FOR, IF, INT, LONG, NEW, PUBLIC, RETURN, STATIC, SWITCH, VOID, WHILE, STRING, PLUS, MINUS, MULT, DIV, MOD, INCREMENT, DECREMENT, ISEQUALTO, NOTEQUALTO, GT, LT, GREATERTHANOREQUAL, LESSTHANOREQUAL, LOGICALAND, LOGICALOR, NOT, DOT, EQUAL, ADDASSIGN, SUBASSIGN, BOOLLIT, NULLVAL, LPARAN, RPARAN, COMMA, SEMI, LBRACK, RBRACK, COLON, LSQBRAK, RSQBRAK, INTLIT, FLOATLIT, DOUBLELIT, LONGLIT, CHARLIT, STRINGLIT}*/
-#define END -1 
+typedef enum{ClassDecl = 1000, ClassBody, ClassBodyDecls, ClassBodyDecl,FieldDecl,
+	Type, Name, QualifiedName, VarDecls, VarDeclarator, MethodReturnVal, MethodDecl,
+	MethodHeader, MethodDeclarator, FormalParmListOpt, FormalParmList, FormalParm,
+	ConstructorDecl, ArgListOpt, ConstructorDeclarator, Block, BlockStmtsOpt, BlockStmts,
+	BlockStmt, LocalVarDeclStmt, LocalVarDecl, Stmt, ExprStmt, StmtExpr, IfThenStmt,
+	IfThenElseStmt,IfThenElseIfStmt, ElseIfSequence, ElseIfStmt, WhileStmt, ForStmt,
+	ForInit, ExprOpt, ForUpdate, StmtExprList, BreakStmt, ReturnStmt, Primary, Literal,
+	InstantiationExpr, ArgList, FieldAccess, MethodCall, PostFixExpr, UnaryExpr,
+	MulExpr, AddExpr, RelOp, RelExpr, EqExpr, CondAndExpr, CondOrExpr, Expr, Assignment,
+	LeftHandSide, AssignOp, UnarySolo, ArrayInit, ArrayOpts, ArrayEle, ArrayEleList,
+	AssignDecl, AssignArray} nonTerm;
+typedef enum {ArrayPackage = AssignArray+1, StringPackage, System, InputStream,
+	out, print, println, charAt, equals, compareTo, length, toString, readj, in,
+	get, set} packages;
+#define END -1
 /*#define IDENTIFIER 257
 #define BOOLEAN 258
 #define BREAK 259

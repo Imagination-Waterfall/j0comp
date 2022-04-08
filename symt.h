@@ -32,7 +32,7 @@ typedef struct sym_entry {
 SymbolTable new_st(int size);			/* create symbol table */
 void delete_st(SymbolTable);			/* destroy symbol table */
 
-int insert_sym(SymbolTable, char *, SymbolTable, int);		/* enter symbol into table */
+int insert_sym(SymbolTable, char *, SymbolTable, int, struct tree *);		/* enter symbol into table */
 
 SymbolTableEntry lookup_st(SymbolTable, char *); /* lookup symbol */
 

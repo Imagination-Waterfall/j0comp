@@ -6,7 +6,7 @@ public class bar {
 		return x;
 	}
 
-	public static int main()
+	public static int main(int args)
 	{
 		int z;
 		int []b = new int[10];

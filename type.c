@@ -68,6 +68,59 @@ typeptr alcclasstype (SymbolTable st, int type){
     /* fill in return type and paramlist by traversing subtrees */
     return rv;
 }
+
+int paramnums(paramlist *pm){
+	int ret = 0;
+	paramlist tmp = *pm;
+	while(tmp != NULL){
+		ret++;
+		printf("%s\n", tmp->name);
+		tmp = tmp->next;
+	}
+	return ret;
+}
+
+void insert_params(paramlist insert){
+	//printf("%s\n", insert->name);
+	paramlist *pm = &head;
+	paramlist ptr;
+	if(*pm == NULL){
+		*pm = insert;
+	}else{
+		ptr = *pm;
+		while(ptr->next != NULL){
+			ptr = ptr->next;
+		}
+		ptr->next = insert;
+	}
+}
+
+void loop_params(struct tree * r){
+	paramlist nextpm;
+	if (r == NULL){
+		return;
+	}
+	if(r->prodrule == FormalParm){
+		//allocate param list and return
+		nextpm = calloc(1, sizeof(struct param));
+		nextpm->name = r->kids[1]->leaf->text;
+		nextpm->next = NULL;
+		insert_params(nextpm);
+		//printf("%s\n", pm->name);
+	}
+	for (int i=0; i<r->nkids; i++){
+		loop_params(r->kids[i]);
+		/*if(pm != NULL){
+			nextpm = loop_params(r->kids[i]);
+			if(nextpm != NULL){
+				pm->next = nextpm;
+			}
+		}else{
+			pm = loop_params(r->kids[i]);
+		}*/
+	}
+}
+
 char *typename(typeptr t)
 {
    if (!t) return "(NULL)";

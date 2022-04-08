@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
+#include "tree.h"
 #include "type.h"
 #include "symt.h"
-#include "tree.h"
 
 extern FILE *yyin;
 extern char *yytext;
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 			print_graph(root, filenameTwoElectricBoogaloo);
 			free(filenameTwoElectricBoogaloo);
 		}else if(strcmp(argv[1], "-symtab") == 0){
-			printsymbols(globals, 0, "", "globals");
+			//printsymbols(globals, 0, "", "globals");
 		}else if(strcmp(argv[1], "-tree") == 0){
 			printtree(root, 0);
 		}

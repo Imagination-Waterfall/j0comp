@@ -12,6 +12,7 @@ typedef struct sym_table {
    int nEntries;			/* # of symbols in the table */
    struct sym_table *parent;		/* enclosing scope, superclass etc. */
    struct sym_entry **tbl;
+   struct sym_entry *parentSymbol; /* pointer to the symbol this table belongs to */
    /* more per-scope/per-symbol-table attributes go here */
    } *SymbolTable;
 

@@ -10,10 +10,12 @@ typedef enum{ClassDecl = 1000, ClassBody, ClassBodyDecls, ClassBodyDecl,FieldDec
 	InstantiationExpr, ArgList, FieldAccess, MethodCall, PostFixExpr, UnaryExpr,
 	MulExpr, AddExpr, RelOp, RelExpr, EqExpr, CondAndExpr, CondOrExpr, Expr, Assignment,
 	LeftHandSide, AssignOp, UnarySolo, ArrayInit, ArrayOpts, ArrayEle, ArrayEleList,
-	AssignDecl, AssignArray} nonTerm;
-typedef enum {ArrayPackage = AssignArray+1, StringPackage, System, InputStream,
+	AssignDecl, AssignArray, ArrayAccess, StringInit} nonTerm;
+
+typedef enum {Class = 1000000, Method, Constructor, Array} predefined;
+/*typedef enum {ArrayPackage = AssignArray+1, StringPackage, System, InputStream,
 	out, print, println, charAt, equals, compareTo, length, toString, readj, in,
-	get, set} packages;
+	get, set} packages;*/
 #define END -1
 /*#define IDENTIFIER 257
 #define BOOLEAN 258

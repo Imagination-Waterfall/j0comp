@@ -1,5 +1,5 @@
-j0: tree.o lex.yy.o j0gram.tab.o type.o symt.o main.o
-	gcc -g -Og -Wall -o j0 tree.o lex.yy.o j0gram.tab.o type.o symt.o main.o
+j0: tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o main.o
+	gcc -g -Og -Wall -o j0 tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o main.o
 
 main.o: main.c category.h tree.h symt.h
 	gcc -g -Og -Wall -c main.c
@@ -25,6 +25,9 @@ symt.o: symt.c symt.h j0gram.tab.h tree.h
 
 type.o: type.c type.h symt.h
 	gcc -c -g -Wall type.c
+
+category.o: category.c category.h j0gram.tab.h
+	gcc -c -g -Wall category.c
 
 clean:
 	rm *.o j0gram.tab.c j0gram.tab.h lex.yy.c j0gram.output j0

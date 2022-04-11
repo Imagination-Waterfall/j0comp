@@ -17,8 +17,11 @@
 void dovariabledeclarator(struct tree * n);
 void semanticerror(char *s, struct tree* n);
 extern void freetree(struct tree *);
-extern typeptr alcfunctype(struct tree*, struct tree*, SymbolTable);
+extern typeptr alcfunctype(SymbolTable, int, struct tree *);
 extern typeptr alcclasstype (SymbolTable, int);
+extern typeptr alcarraytype(int, struct tree *);
+extern char *nonTermToStr(int);
+
 extern paramlist loop_params(struct tree*);
 extern int paramnums(paramlist*);
 int errors = 0;
@@ -108,27 +111,29 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct t
    se->s = strdup(s);
    st->nEntries++;
    switch(type){
-	   case ArrayPackage:
-	   case StringPackage:
-	   case System:
-	   case ClassDecl:
-	   case InputStream:{
+	   case Class:
+	   case ClassDecl:{
 		   se->type = alcclasstype(children, type);
+		   children->parentSymbol = se;
 		   break;
 	   }
 	   case MethodDecl:
 	   case ConstructorDecl:{
-		   se->type = alcclasstype(children, type);
-		   se->type->u.f.parameters = calloc(1, sizeof(struct param));
+		   se->type = alcfunctype(children, type, r);
 		   se->type->u.f.parameters = NULL;
 		   head = NULL;
 		   loop_params(r);
 		   se->type->u.f.parameters = head;
 		   se->type->u.f.nparams = paramnums(&se->type->u.f.parameters);
+		   children->parentSymbol = se;
+		   break;
+	   }
+	   case AssignArray: {
+		   se->type = alcarraytype(type, r);
 		   break;
 	   }
 	   default:
-	   se->type = alctype(type);
+	   	   se->type = alctype(type);
    }
    return h;
 }
@@ -171,6 +176,7 @@ int enter_newscope(char *s, int type, struct tree * r)
    /* insert s into current symbol table */
    /* attach new symbol table to s's symbol table in the current symbol table*/
    isErr = insert_sym(current, s, st, type, r);
+   //printf("CURRENT: %s\n", s);
    /* push new symbol on the stack, making it the current symbol table */
    /* add params to parameter list */
    pushscope(st);
@@ -190,6 +196,7 @@ void insert_vars(struct tree *n, int type)
 void populate_symboltables(struct tree * n)
 {
 	int i;
+	int foundFlag = 0;
 	if (n == NULL) return;
 	/* pre-order activity */
 	switch (n->prodrule) {
@@ -199,31 +206,31 @@ void populate_symboltables(struct tree * n)
 			globals = new_st(5);
 			current = NULL;
 			pushscope(globals);
-			enter_newscope("Array", ArrayPackage, NULL);
-			insert_sym(current, "get", NULL, get, NULL);
-			insert_sym(current, "set", NULL, set, NULL);
+			enter_newscope("Array", Class, NULL);
+			insert_sym(current, "get", NULL, Method, NULL);
+			insert_sym(current, "set", NULL, Method, NULL);
 			popscope();
 			//------------------------------
-			enter_newscope("String", StringPackage, NULL);
-			insert_sym(current, "charAt", NULL, charAt, NULL);
-			insert_sym(current, "equals", NULL, equals, NULL);
-			insert_sym(current, "compareTo", NULL, compareTo, NULL);
-			insert_sym(current, "length", NULL, length, NULL);
-			insert_sym(current, "toString", NULL, toString, NULL);
+			enter_newscope("String", Class, NULL);
+			insert_sym(current, "charAt", NULL, Method, NULL);
+			insert_sym(current, "equals", NULL, Method, NULL);
+			insert_sym(current, "compareTo", NULL, Method, NULL);
+			insert_sym(current, "length", NULL, Method, NULL);
+			insert_sym(current, "toString", NULL, Method, NULL);
 			popscope();
 			//------------------------------
-			enter_newscope("System", System, NULL);
-			enter_newscope("out", ClassDecl, NULL);
-			insert_sym(current, "print", NULL, print, NULL);
-			insert_sym(current, "println", NULL, println, NULL);
+			enter_newscope("System", Class, NULL);
+			enter_newscope("out", Class, NULL);
+			insert_sym(current, "print", NULL, Method, NULL);
+			insert_sym(current, "println", NULL, Method, NULL);
 			popscope();
-			enter_newscope("in", ClassDecl, NULL);
-			insert_sym(current, "read", NULL, readj, NULL);
+			enter_newscope("in", Class, NULL);
+			insert_sym(current, "read", NULL, Method, NULL);
 			popscope();
 			popscope();
 			//------------------------------
-			enter_newscope("InputStream", InputStream, NULL);
-			insert_sym(current, "read", NULL, readj, NULL);
+			enter_newscope("InputStream", Class, NULL);
+			insert_sym(current, "read", NULL, Method, NULL);
 			popscope();
 			enter_newscope(n->kids[2]->leaf->text, ClassDecl, NULL);
 			//insert_sym(current, n->kids[2]->leaf->text ,NULL);
@@ -231,7 +238,6 @@ void populate_symboltables(struct tree * n)
 			break;
 		}
 		case MethodDecl: {
-			//printf("MethodDecl\n");
 			char *methodName = n->kids[0]->kids[3]->kids[0]->leaf->text;
 			//int type = n->kids[0]->kids[2]->leaf->category;
 			if(enter_newscope(methodName, MethodDecl, n) == -1){
@@ -270,7 +276,17 @@ void populate_symboltables(struct tree * n)
 			}
 			break;
 		}
-		case FieldDecl:
+		case FieldDecl: {
+			if(n->kids[1]->prodrule != AssignArray && n->kids[1]->prodrule != Assignment){
+				int type = n->kids[1]->leaf->category;
+				char *varName = n->kids[2]->leaf->text;
+				if(insert_sym(current, varName, NULL, type, NULL) == -1){
+					semanticerror("Symbol redefined", n->kids[1]);
+				}
+				break;
+			}
+			break;
+		}
 		case LocalVarDecl: {
 			int type = n->kids[0]->leaf->category;
 			char *varName = n->kids[1]->leaf->text;
@@ -278,6 +294,43 @@ void populate_symboltables(struct tree * n)
 			//insert_vars(n, type);
 			if(insert_sym(current, varName, NULL, type, NULL) == -1){
 				semanticerror("Symbol redefined", n->kids[1]);
+			}
+			break;
+		}
+		case AssignDecl: {
+			int type = n->kids[0]->leaf->category;
+			char *varName = n->kids[1]->leaf->text;
+			//printf("%s\n", varName);
+			//insert_vars(n, type);
+			if(insert_sym(current, varName, NULL, type, NULL) == -1){
+				semanticerror("Symbol redefined", n->kids[1]);
+			}
+			break;
+		}
+		case AssignArray: {
+			int type = AssignArray;//n->kids[0]->leaf->category;
+			char *varName;
+			foundFlag = 0;
+			if(n->kids[1]->prodrule != LSQBRAK){
+				varName = n->kids[1]->leaf->text;
+			}else {
+				varName = n->kids[3]->leaf->text;
+			}
+			//check if its in the parameter ArgList
+			if(current->parentSymbol != NULL && current->parentSymbol->type->u.f.parameters != NULL){
+				paramlist check = current->parentSymbol->type->u.f.parameters;
+				while(check != NULL){
+					if(strcmp(varName, check->name) == 0){
+						foundFlag = 1;
+						break;
+					}
+					check = check->next;
+				}
+			}
+			if(foundFlag == 0){
+				if (insert_sym(current, varName, NULL, type, n) == -1){
+					semanticerror("Symbol redefined", n->kids[1]);
+				}
 			}
 			break;
 		}
@@ -293,53 +346,77 @@ void populate_symboltables(struct tree * n)
 			break;
 		}*/
 		case IDENTIFIER:{
-			/*//check symbol table
+			//check symbol table
 			//generic check
 			//printf("%s\n", n->leaf->text);
 			SymbolTable check = current;
-			int foundFlag = 0;
+			typeptr symbolType = NULL;
+			paramlist params;
+			foundFlag = 0;
+			//printf("current symbol: %s\n", n->leaf->text);
+
+			if(current->parentSymbol != NULL){
+				symbolType = current->parentSymbol->type;
+				//printf("checking for: %s in %s\n", n->leaf->text, current->parentSymbol->s);
+			}
 			while(check != NULL){
-				//printsymbols(check, 0);
 				if(lookup_st(check, n->leaf->text) != NULL){
+					//check current symbol table
 					foundFlag = 1;
 					break;
+				}
+				if(symbolType != NULL && (symbolType->basetype == MethodDecl
+					|| symbolType->basetype == ConstructorDecl)){
+					//check parameters
+					params = symbolType->u.f.parameters;
+					while(params != NULL){
+						//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
+						if(strcmp(n->leaf->text, params->name) == 0){
+							foundFlag = 1;
+							break;
+						}
+						params = params->next;
+					}
+					if(foundFlag == 1){
+						break;
+					}
 				}
 				check = check->parent;
 			}
 
 			//Check packages
 			if(foundFlag == 0){
-				SymbolTable check = lookup_st(globals, "System")->scope;
+				SymbolTable check = lookup_st(globals, "System")->type->u.c.st;
 				if(lookup_st(check, n->leaf->text) != NULL){
 					break;
 				}else{
-					check = lookup_st(check, "out")->scope;
+					check = lookup_st(check, "out")->type->u.c.st;
 					if(lookup_st(check, n->leaf->text) != NULL){
 						break;
 					}else{
-						check = lookup_st(globals, "System")->scope;
-						check = lookup_st(check, "in")->scope;
+						check = lookup_st(globals, "System")->type->u.c.st;
+						check = lookup_st(check, "in")->type->u.c.st;
 						if(lookup_st(check, n->leaf->text) != NULL){
 							break;
 						}
 					}
 				}
-				check = lookup_st(globals, "InputStream")->scope;
+				check = lookup_st(globals, "InputStream")->type->u.c.st;
 				if(lookup_st(check, n->leaf->text) != NULL){
 					break;
 				}
-				check = lookup_st(globals, "String")->scope;
+				check = lookup_st(globals, "String")->type->u.c.st;
 				if(lookup_st(check, n->leaf->text) != NULL){
 					break;
 				}
-				check = lookup_st(globals, "Array")->scope;
+				check = lookup_st(globals, "Array")->type->u.c.st;
 				if(lookup_st(check, n->leaf->text) != NULL){
 					break;
 				}
 				semanticerror("Symbol Undeclared", n);
 			}
 			//predefined check
-			break;*/
+			break;
 		}
 	}
 	/* visit children */
@@ -349,7 +426,6 @@ void populate_symboltables(struct tree * n)
 	/* post-order activity */
 	switch (n->prodrule) {
 		case MethodDecl:{
-			alcfunctype(n->kids[0], n->kids[0]->kids[3], current);
 			popscope();
 			break;
 		}
@@ -372,13 +448,36 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 {
 	int i;
 	SymbolTableEntry ste;
+	paramlist params;
 	if (st == NULL) return;
 
 	printf("--- symbol table for: %s %s ---\n", type, name);
+	if(st->parentSymbol != NULL && st->parentSymbol->type->u.f.parameters != NULL){
+		params = st->parentSymbol->type->u.f.parameters;
+		printf("Parameters: \n");
+		while(params != NULL){
+			printf("\t%s, %s", params->name, nonTermToStr(params->type->basetype));
+			if(params->type->basetype == AssignArray){
+				printf(", %s\n", nonTermToStr(params->type->u.a.elemtype->basetype));
+			}
+			params = params->next;
+		}
+		printf("\n");
+	}
 	for (i=0;i<st->nBuckets;i++) {
 		ste = st->tbl[i];
 		while (ste != NULL) {
-			printf("%s\n", ste->s);
+			printf("%s, %s", ste->s, nonTermToStr(ste->type->basetype));
+			if(ste->type->basetype == AssignArray){
+				printf(", %s", nonTermToStr(ste->type->u.a.elemtype->basetype));
+			}
+			if(ste->type->basetype == MethodDecl){
+				printf(", %s", nonTermToStr(ste->type->u.f.returntype->basetype));
+				if(ste->type->u.f.returntype->basetype == AssignArray){
+					printf(", %s", nonTermToStr(ste->type->u.f.returntype->u.a.elemtype->basetype));
+				}
+			}
+			printf("\n");
 			ste = ste->next;
       }
    }
@@ -388,26 +487,22 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 	   while (ste != NULL) {
 		   char *s;
 		   switch(ste->type->basetype){
-			   case ClassDecl:{
+			   case ClassDecl:
+			   case Class:{
 				   s = "Class";
 				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
 				   break;
 			   }
-			   case MethodDecl:{
+			   case MethodDecl:
+			   case Method:{
 				   s = "Method";
-				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
+				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
 				   break;
 			   }
 			   case ConstructorDecl:{
 				   s = "Constructor";
-				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
+				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
 				   break;
-			   }
-			   default:{
-				   if(ste->type->basetype >= ArrayPackage && ste->type->basetype <= set){
-					   s = "Package";
-					   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
-				   }
 			   }
 		   }
 		   ste = ste->next;

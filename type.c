@@ -1,35 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "category.h"
 #include "tree.h"
 #include "type.h"
 #include "symt.h"
 #include "j0gram.tab.h"
 
 struct typeinfo integer_type = { INT };
+struct typeinfo bool_type = { BOOL };
+struct typeinfo long_type = { LONG };
+struct typeinfo string_type = { STRING };
+struct typeinfo char_type = { CHAR };
 struct typeinfo null_type = { NULLVAL };
-typeptr null_typeptr = &null_type;
 typeptr integer_typeptr = &integer_type;
-typeptr String_typeptr;
+typeptr bool_typeptr = &bool_type;
+typeptr long_typeptr = &long_type;
+typeptr string_typeptr = &string_type;
+typeptr char_typeptr = &integer_type;
+typeptr null_typeptr = &null_type;
 char *typenam[] = {"null", "int", "class", "method"};
-enum nonTerm{ClassDecl = 1000, ClassBody, ClassBodyDecls, ClassBodyDecl,FieldDecl,
-	Type, Name, QualifiedName, VarDecls, VarDeclarator, MethodReturnVal, MethodDecl,
-	MethodHeader, MethodDeclarator, FormalParmListOpt, FormalParmList, FormalParm,
-	ConstructorDecl, ArgListOpt, ConstructorDeclarator, Block, BlockStmtsOpt, BlockStmts,
-	BlockStmt, LocalVarDeclStmt, LocalVarDecl, Stmt, ExprStmt, StmtExpr, IfThenStmt,
-	IfThenElseStmt,IfThenElseIfStmt, ElseIfSequence, ElseIfStmt, WhileStmt, ForStmt,
-	ForInit, ExprOpt, ForUpdate, StmtExprList, BreakStmt, ReturnStmt, Primary, Literal,
-	InstantiationExpr, ArgList, FieldAccess, MethodCall, PostFixExpr, UnaryExpr,
-	MulExpr, AddExpr, RelOp, RelExpr, EqExpr, CondAndExpr, CondOrExpr, Expr, Assignment,
-	LeftHandSide, AssignOp, UnarySolo, ArrayInit, ArrayOpts, ArrayEle, ArrayEleList,
-	AssignDecl, AssignArray};
-enum packages{ArrayPackage = AssignArray+1, StringPackage, System, InputStream,
-	out, print, println, charAt, equals, compareTo, length, toString, read, in,
-	get, set};
 
 typeptr alctype(int base)
 {
    typeptr rv;
    if (base == INT) return &integer_type;
+   if (base == BOOL) return &bool_type;
+   if (base == LONG) return &long_type;
+   if (base == STRING) return &string_type;
+   if (base == CHAR) return &integer_type;
+   if (base == NULLVAL) return &null_type;
    rv = (typeptr) calloc(1, sizeof(struct typeinfo));
    if (rv == NULL) return rv;
    rv->basetype = base;
@@ -40,25 +39,21 @@ typeptr alctype(int base)
  * for the return type (r) and the parameter list (p), but the calls to
  * to this function in the example are just passing NULL at present!
  */
-typeptr alcfunctype(struct tree * r, struct tree * p, SymbolTable st)
+typeptr alcfunctype(SymbolTable st, int type, struct tree * r)
 {
-   typeptr rv = alctype(MethodDecl);
+   typeptr rv = alctype(type);
    if (rv == NULL) return NULL;
    rv->u.f.st = st;
    /* fill in return type and paramlist by traversing subtrees */
-   return rv;
-}
-
-/* in order for this to make any sense, you have to pass in the subtrees
- * for the return type (r) and the parameter list (p), but the calls to
- * to this function in the example are just passing NULL at present!
- */
-typeptr alcconsttype(struct tree * r, struct tree * p, SymbolTable st)
-{
-   typeptr rv = alctype(ConstructorDecl);
-   if (rv == NULL) return NULL;
-   rv->u.f.st = st;
-   /* fill in return type and paramlist by traversing subtrees */
+   if(type == MethodDecl){
+	   if(r->kids[0]->kids[2]->prodrule == MethodReturnVal){
+		   //r->kids[0]->kids[2]->kids[0]->prodrule
+		   rv->u.f.returntype = alctype(AssignArray);
+		   rv->u.f.returntype->u.a.elemtype = alctype(r->kids[0]->kids[2]->kids[0]->prodrule);
+	   }else{
+		   rv->u.f.returntype = alctype(r->kids[0]->kids[2]->prodrule);
+	   }
+   }
    return rv;
 }
 
@@ -69,12 +64,18 @@ typeptr alcclasstype (SymbolTable st, int type){
     return rv;
 }
 
+typeptr alcarraytype(int type, struct tree * r){
+	typeptr rv = alctype(type);
+	rv->u.a.elemtype = alctype(r->kids[0]->prodrule);
+	return rv;
+}
+
 int paramnums(paramlist *pm){
 	int ret = 0;
 	paramlist tmp = *pm;
 	while(tmp != NULL){
 		ret++;
-		printf("%s\n", tmp->name);
+		//printf("%s\n", tmp->name);
 		tmp = tmp->next;
 	}
 	return ret;
@@ -103,7 +104,17 @@ void loop_params(struct tree * r){
 	if(r->prodrule == FormalParm){
 		//allocate param list and return
 		nextpm = calloc(1, sizeof(struct param));
-		nextpm->name = r->kids[1]->leaf->text;
+		if(r->kids[0]->prodrule != AssignArray){
+			nextpm->name = r->kids[1]->leaf->text;
+			nextpm->type = alctype(r->kids[0]->prodrule);
+		}else{
+			if(r->kids[0]->kids[1]->prodrule == LSQBRAK){
+				nextpm->name = r->kids[0]->kids[3]->leaf->text;
+			}else{
+				nextpm->name = r->kids[0]->kids[1]->leaf->text;
+			}
+			nextpm->type = alcarraytype(r->kids[0]->prodrule, r->kids[0]);
+		}
 		nextpm->next = NULL;
 		insert_params(nextpm);
 		//printf("%s\n", pm->name);

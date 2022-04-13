@@ -20,4 +20,5 @@ struct tree {
 	int nkids;
 	struct tree *kids[9];
 	struct token *leaf;
+	typeptr type;
 };

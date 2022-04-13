@@ -27,7 +27,7 @@ typeptr alctype(int base)
    if (base == BOOL) return &bool_type;
    if (base == LONG) return &long_type;
    if (base == STRING) return &string_type;
-   if (base == CHAR) return &integer_type;
+   if (base == CHAR) return &char_type;
    if (base == NULLVAL) return &null_type;
    rv = (typeptr) calloc(1, sizeof(struct typeinfo));
    if (rv == NULL) return rv;
@@ -117,18 +117,9 @@ void loop_params(struct tree * r){
 		}
 		nextpm->next = NULL;
 		insert_params(nextpm);
-		//printf("%s\n", pm->name);
 	}
 	for (int i=0; i<r->nkids; i++){
 		loop_params(r->kids[i]);
-		/*if(pm != NULL){
-			nextpm = loop_params(r->kids[i]);
-			if(nextpm != NULL){
-				pm->next = nextpm;
-			}
-		}else{
-			pm = loop_params(r->kids[i]);
-		}*/
 	}
 }
 

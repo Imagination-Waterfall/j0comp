@@ -142,21 +142,21 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct t
  * lookup_st - search the symbol table for a given symbol, return its entry.
  */
 SymbolTableEntry lookup_st(SymbolTable st, char *s)
-   {
-   //register int i;
-   int h;
-   SymbolTableEntry se;
-   h = hash(st, s);
-   for (se = st->tbl[h]; se != NULL; se = se->next){
-      if (!strcmp(s, se->s)) {
-         /*
-          *  Return a pointer to the symbol table entry.
-          */
-         return se;
-         }
-	 }
-   return NULL;
-   }
+{
+	//register int i;
+	int h;
+	SymbolTableEntry se;
+	h = hash(st, s);
+	for (se = st->tbl[h]; se != NULL; se = se->next){
+		if (!strcmp(s, se->s)) {
+			/*
+			*  Return a pointer to the symbol table entry.
+			*/
+			return se;
+		}
+	}
+	return NULL;
+}
 
 char * alloc(int n)
 {
@@ -334,17 +334,6 @@ void populate_symboltables(struct tree * n)
 			}
 			break;
 		}
-		/*case FormalParm:{
-			int type = n->kids[0]->leaf->category;
-			char *varName = n->kids[1]->leaf->text;
-			//current->type.u.f.nparams++;
-			//printf("%s\n", varName);
-			//insert_vars(n, type);
-			if(insert_sym(current, varName, NULL, type) == -1){
-				semanticerror("Symbol redefined", n->kids[1]);
-			}
-			break;
-		}*/
 		case IDENTIFIER:{
 			//check symbol table
 			//generic check
@@ -458,11 +447,11 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 		while(params != NULL){
 			printf("\t%s, %s", params->name, nonTermToStr(params->type->basetype));
 			if(params->type->basetype == AssignArray){
-				printf(", %s\n", nonTermToStr(params->type->u.a.elemtype->basetype));
+				printf(", %s", nonTermToStr(params->type->u.a.elemtype->basetype));
 			}
+			printf("\n");
 			params = params->next;
 		}
-		printf("\n");
 	}
 	for (i=0;i<st->nBuckets;i++) {
 		ste = st->tbl[i];

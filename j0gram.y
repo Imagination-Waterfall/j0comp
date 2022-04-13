@@ -150,7 +150,9 @@ StmtExprList: StmtExpr {$$ = $1;}
 
 BreakStmt: BREAK SEMI {$$ = alctree(BreakStmt, "BreakStmt", 2, $1, $2);}
 	| BREAK IDENTIFIER SEMI {$$ = alctree(BreakStmt, "BreakStmt", 3, $1, $2, $3);};
-ReturnStmt: RETURN ExprOpt SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);};
+ReturnStmt: RETURN ExprOpt SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);}
+	| RETURN MethodCall SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);}
+	| RETURN ArrayInit SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);};
 
 Primary:  Literal {$$ = $1;}
 	| LPARAN Expr RPARAN {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);}
@@ -179,7 +181,7 @@ MethodCall: InstantiationExpr {$$ = $1;}
 StringInit: NEW STRING LPARAN STRINGLIT RPARAN {$$ = alctree(StringInit, "StringInit", 5, $1, $2, $3, $4, $5);}
 	| NEW STRING LPARAN RPARAN {$$ = alctree(StringInit, "StringInit", 4, $1, $2, $3, $4);};
 
-ArrayOpts: INTLIT {$$ = $1;}
+ArrayOpts: Literal {$$ = $1;}
 	| IDENTIFIER {$$ = $1;}
 	| {$$ = NULL;};
 ArrayEle: ArrayOpts {$$ = $1;}

@@ -1,30 +1,132 @@
 public class bar {
 
-	public int a = 10;
-	/*public int u[];
+	/*public int a = 10;
+	public int u[];
 	public int []p;
 	public int b;*/
 
-	bar(int x){
+	/*bar(int x){
 		a = x;
+	}*/
+	/*public static void test(int a, long b[], String c, char d, boolean e){
+
 	}
-	public static long[] foo() {
+
+	public static int test2(){
+		return 10;
+	}*/
+	/*public static int[] ab() {
+		//int a[] = {20};
+		return new int[12];
+	}*/
+	/*public static int[] aa() {
 		int a[] = {20};
 		return a;
 	}
-	public static int foobar() {
-		int a = 40;
-		return a;
+
+	public static String ac() {
+		int a[] = {20};
+		return "test";
+	}*/
+
+	/*public static String ad() {
+		int a[] = {20};
+		return new String("test");
+	}*/
+	/*public static String[] ae() {
+		int a[] = {20};
+		return new String[10];
 	}
 
-	public static int main(int []argv, String args[], int y)
+	public static int[] af() {
+		//int a[] = {20};
+		return ae();
+	}*/
+
+	public static int main()
 	{
-		int z;
+		int a = 11;
+		int b = 11;
+
+		/*long b = 11l;
+		String c = "test2";
+		char d = 't';
+		boolean e = false;
+		test(test2(), b, c, d, e);*/
+
+		a = b + 10;
+		b = a - 13;
+		a = b * 34;
+		b = a / 2;
+		a = b % 13;
+		int z = 2;
+		z = z + 10 - 13 * 34 / 2 % 13 > a < b;
+		if(a == b){
+			boolean c = !a;
+			boolean d = c && a;
+			boolean e = d || c;
+			boolean f = a < b;
+			boolean g = a > b;
+
+		}
+
+		/*//bar c; constructor tests*/
+		/*int a = 10;
+		int b;
+		b = a;*/
+		//String a = new String("a");
+		//a = 10;
+		//Test for regular assignments
+		/*int a;
+		long b;
+		boolean c;
+		String d;
+		char e;
+		b = 10l;
+		c = true;
+		d = "This is a test\n";
+		e = 't';*/
+
+		/*
+		//Test for function calls
+		foobar(a);
+		*/
+
+
+		//Test for assignmnet function calls
+		//int d = 10;
+		//a = foobar(10);
+		//int b = foobar(a);
+		//int e[] = foo();
+
+		//tests for Arrays
+		/*int c[];
+		int e[] = new int[10];
+		int []f = new int[10];
+		long g[] = {11l, 12l};
+		int []d;
+		int []h = {21, 32, 45};
+		c = new int[10];
+		d = {};
+		d = {23, 45, 56, 78, 234, 54, 67, 23};*/
+
+		//Test for assignment declarators
+		/*int f = 10;
+		long g = 23l;
+		boolean h = true;
+		String i = "This is a test \n";
+		char j = 't';*/
+
+
+		/*int z;
 		int asdf[];
 		int []t = {10, 40, 20};
+		t={};
 
-		z = foobar();
+		z = foobar(34);
 		t = foo();
+
+		t[0] = foobar(z);*/
 		/*int []i;
 		int []b = new int[10];
 		int c[] = new int[10];

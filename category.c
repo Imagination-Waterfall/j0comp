@@ -54,6 +54,10 @@ char *nonTermToStr(int i){
 			ret = "NULL";
 			break;
 		}
+		case VOID:{
+			ret = "void";
+			break;
+		}
 		default:
 			ret = "Type Not Yet Defined";
 

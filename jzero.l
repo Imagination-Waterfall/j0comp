@@ -15,7 +15,7 @@
 			int rows = 0, words = 0, chars = 0;
 DIGIT	[0-9]
 ID	[a-zA-Z][a-zA-Z0-9_]*
-CHAR	.|"\\n"|"\\t"|"\\\""|"\\\'"
+CHAR	[^"]|"\\n"|"\\t"|"\\\""|"\\\'"
 %%
 "/*"([^*]|"*"+[^/])*"*/"	{
 					/*remove block comments*/
@@ -44,7 +44,7 @@ void		words++; chars += strlen(yytext); return(alctoken(VOID));
 while		words++; chars += strlen(yytext); return(alctoken(WHILE));
 String		words++; chars += strlen(yytext); return(alctoken(STRING));
 true|false return(alctoken(BOOLLIT));
-NULL return(alctoken(NULLVAL));
+null return(alctoken(NULLVAL));
 abstract|assert|byte|catch|const|do|enum|exports|extends|final|finally|goto|implements|import|interface|module|native|package|protected|requires|short|strictfp|super|synchronized|this|throw|throws|transient|try|var|volatile|private|instanceof|case|switch|default|continue|double|float	return(alctoken(ERR));
 "="		chars += strlen(yytext); return(alctoken(EQUAL));
 "+"		chars += strlen(yytext); return(alctoken(PLUS));

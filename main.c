@@ -18,6 +18,7 @@ extern void printtree(struct tree *, int);
 extern void populate_symboltables(struct tree *);
 extern void freetree(struct tree *);
 extern void print_graph(struct tree *, char *);
+extern void check_type(struct tree *);
 extern SymbolTable global;
 char* filename;
 
@@ -92,6 +93,7 @@ int main(int argc, char **argv) {
 		}else if(strcmp(argv[1], "-symtab") == 0){
 			populate_symboltables(root);
 			printsymbols(globals, 0, "", "globals");
+			check_type(root);
 		}else if(strcmp(argv[1], "-tree") == 0){
 			printtree(root, 0);
 		}

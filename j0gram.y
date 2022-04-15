@@ -1,6 +1,7 @@
 %{
 	#include <stdio.h>
 	#include "category.h"
+	#include "type.h"
 	#include "tree.h"
 	extern int yylex();
 	extern int yyerror(char *s);
@@ -39,7 +40,7 @@
 
 %type <treeptr> ClassDecl ClassBody ClassBodyDecls ClassBodyDecl
 %type <treeptr> FieldDecl Type Name QualifiedName VarDecls
-%type <treeptr> VarDeclarator MethodReturnVal MethodDecl MethodHeader
+%type <treeptr> VarDeclarator MethodDecl MethodHeader
 %type <treeptr> MethodDeclarator FormalParmListOpt FormalParmList
 %type <treeptr> FormalParm ConstructorDecl ArgListOpt ConstructorDeclarator
 %type <treeptr> Block BlockStmtsOpt BlockStmts BlockStmt LocalVarDeclStmt
@@ -50,7 +51,8 @@
 %type <treeptr> MethodCall PostFixExpr UnaryExpr MulExpr AddExpr
 %type <treeptr> RelOp RelExpr EqExpr CondAndExpr CondOrExpr Expr Assignment
 %type <treeptr> LeftHandSide AssignOp UnarySolo ArrayInit ArrayOpts ArrayEle
-%type <treeptr> ArrayEleList AssignDecl AssignArray ArrayAccess StringInit
+%type <treeptr> ArrayEleList AssignArray ArrayAccess StringInit
+%type <treeptr> DeclHeader AssignInit
 
 %%
 ClassDecl: PUBLIC CLASS IDENTIFIER ClassBody {$$ = alctree(ClassDecl, "ClassDecl", 4, $1, $2, $3, $4); root = $$;};
@@ -61,36 +63,37 @@ ClassBodyDecls: ClassBodyDecl {$$ = $1;}
 ClassBodyDecl: FieldDecl {$$ = $1;}
 	| MethodDecl {$$ = $1;}
 	| ConstructorDecl {$$ = $1;};
-FieldDecl: PUBLIC Type VarDecls SEMI {$$ = alctree(FieldDecl, "FieldDecl", 4, $1, $2, $3, $4);}
-	| PUBLIC AssignArray SEMI {$$ = alctree(FieldDecl, "FieldDecl", 3, $1, $2, $3);}
-	|PUBLIC Assignment SEMI {$$ = alctree(FieldDecl, "FieldDecl", 3, $1, $2, $3);};
+FieldDecl: DeclHeader VarDecls SEMI {$$ = alctree(FieldDecl, "FieldDecl", 3, $1, $2, $3);}
+	| DeclHeader AssignArray SEMI {$$ = alctree(FieldDecl, "FieldDecl", 3, $1, $2, $3);}
+	| DeclHeader AssignInit SEMI {$$ = alctree(FieldDecl, "FieldDecl", 3, $1, $2, $3);};
 Type: INT {$$ = $1;}
 	| BOOL {$$ = $1;}
 	| LONG {$$ = $1;}
 	| STRING {$$ = $1;}
 	| CHAR {$$ = $1;}
+	| VOID {$$ = $1;}
 	| Name {$$ = $1;};
 
 Name: IDENTIFIER {$$ = $1;}
 	| QualifiedName {$$ = $1;};
 QualifiedName: Name DOT IDENTIFIER {$$ = alctree(QualifiedName, "QualifiedName", 3, $1, $2, $3);};
 
+DeclHeader: PUBLIC STATIC Type {$$ = alctree(DeclHeader, "DeclHeader", 3, $1, $2, $3);};
+
 VarDecls: VarDeclarator {$$ = $1;}
 	| VarDecls COMMA VarDeclarator {$$ = alctree(VarDecls, "VarDecls", 3, $1, $2, $3);};
 VarDeclarator: IDENTIFIER {$$ = $1;}
 
-MethodReturnVal : Type {$$ = $1;}
-	| Type LSQBRAK RSQBRAK {$$ = alctree(MethodReturnVal, "MethodReturnVal", 3, $1, $2, $3);}
-	| VOID {$$ = $1;};
 MethodDecl: MethodHeader Block {$$ = alctree(MethodDecl, "MethodDecl", 2, $1, $2);};
-MethodHeader: PUBLIC STATIC MethodReturnVal MethodDeclarator {$$ = alctree(MethodHeader, "MethodHeader", 4, $1, $2, $3, $4);};
+MethodHeader: DeclHeader MethodDeclarator {$$ = alctree(MethodHeader, "MethodHeader", 2, $1, $2);}
+	| DeclHeader LSQBRAK RSQBRAK MethodDeclarator {$$ = alctree(MethodHeader, "MethodHeader", 4, $1, $2, $3, $4);};
 MethodDeclarator: IDENTIFIER LPARAN FormalParmListOpt RPARAN {$$ = alctree(MethodDeclarator, "MethodDeclarator", 4, $1, $2, $3, $4);};
 FormalParmListOpt: FormalParmList {$$ = $1;}
 	| {$$ = NULL;};
 FormalParmList: FormalParm {$$ = $1;}
 	| FormalParmList COMMA FormalParm {$$ = alctree(FormalParmList, "FormalParmList", 3, $1, $2, $3);};
 FormalParm: Type VarDeclarator {$$ = alctree(FormalParm, "FormalParm", 2, $1, $2);}
-	| AssignArray {$$ = alctree(FormalParm, "FormalParm", 1, $1);};
+	| Type AssignArray {$$ = alctree(FormalParm, "FormalParm", 1, $1);};
 
 ConstructorDecl: ConstructorDeclarator Block {$$ = alctree(ConstructorDecl, "ConstructorDecl", 2, $1, $2);};
 ArgListOpt:  ArgList {$$ = $1;}
@@ -104,9 +107,10 @@ BlockStmts:  BlockStmt {$$ = $1;}
 BlockStmt:   LocalVarDeclStmt {$$ = $1;}
 	| Stmt {$$ = $1;} ;
 
-LocalVarDeclStmt: LocalVarDecl SEMI {$$ = alctree(LocalVarDeclStmt, "LocalVarDeclStmt", 2, $1, $2);}
-	|AssignArray SEMI {$$ = alctree(LocalVarDeclStmt, "LocalVarDeclStmt", 2, $1, $2);};
-LocalVarDecl: Type VarDecls {$$ = alctree(LocalVarDecl, "LocalVarDecl", 2, $1, $2);};
+LocalVarDeclStmt: LocalVarDecl SEMI {$$ = alctree(LocalVarDeclStmt, "LocalVarDeclStmt", 2, $1, $2);};
+LocalVarDecl: Type VarDecls {$$ = alctree(LocalVarDecl, "LocalVarDecl", 2, $1, $2);}
+	| Type AssignArray {$$ = alctree(LocalVarDecl, "LocalVarDecl", 2, $1, $2);}
+	| Type AssignInit {$$ = alctree(LocalVarDecl, "LocalVarDecl", 2, $1, $2);};
 
 Stmt: Block {$$ = $1;}
 	| SEMI {$$ = $1;}
@@ -222,20 +226,21 @@ CondOrExpr: CondAndExpr {$$ = $1;}
 Expr: CondOrExpr {$$ = $1;}
 	| Assignment {$$ = $1;};
 Assignment: LeftHandSide AssignOp Expr {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);}
-	| LeftHandSide AssignOp ArrayInit {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);}
-	| LeftHandSide AssignOp ArrayAccess {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);};
+	| LeftHandSide AssignOp ArrayAccess {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);}
+	| LeftHandSide AssignOp ArrayInit {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);};
 LeftHandSide: Name {$$ = $1;}
 	| FieldAccess {$$ = $1;}
-	| AssignDecl {$$ = $1;}
-	| AssignArray {$$ = $1;}
-	| ArrayAccess {$$ = $1;};
+	| ArrayAccess {$$ = $1;};;
 AssignOp: EQUAL {$$ = $1;}
 	| ADDASSIGN {$$ = $1;}
 	| SUBASSIGN {$$ = $1;};
 
-AssignDecl: Type Name {$$ = alctree(AssignDecl, "AssignDecl", 2, $1, $2);};
-AssignArray: Type LSQBRAK RSQBRAK Name {$$ = alctree(AssignArray, "AssignArray", 4, $1, $2, $3, $4);}
-	|Type Name LSQBRAK RSQBRAK {$$ = alctree(AssignArray, "AssignArray", 4, $1, $2, $3, $4);};
+AssignInit: VarDeclarator AssignOp Expr {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);}
+	| AssignArray AssignOp ArrayInit {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);};
+
+
+AssignArray: LSQBRAK RSQBRAK IDENTIFIER {$$ = alctree(AssignArray, "AssignArray", 3, $1, $2, $3);}
+	| IDENTIFIER LSQBRAK RSQBRAK {$$ = alctree(AssignArray, "AssignArray", 3, $1, $2, $3);};
 ArrayAccess: IDENTIFIER LSQBRAK INTLIT RSQBRAK {$$ = alctree(ArrayAccess, "ArrayAccess", 4, $1, $2, $3, $4);};
 %%
 const char *yyname(int sym){

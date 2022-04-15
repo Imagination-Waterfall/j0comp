@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
-#include "tree.h"
 #include "type.h"
+#include "tree.h"
 #include "symt.h"
 
 extern FILE *yyin;

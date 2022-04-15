@@ -1,5 +1,10 @@
 public class bar {
 
+	public static int a;
+	public static int b = 10;
+	public static int y = a + 10 - 13 * 34 / 2 % 13 > a < b;
+	public static int []x = new int[10];
+	public static int w[] = new int[10];
 	/*public int a = 10;
 	public int u[];
 	public int []p;
@@ -42,9 +47,11 @@ public class bar {
 		//int a[] = {20};
 		return ae();
 	}*/
-
+	public static int d;
 	public static int main()
 	{
+		bar b = new bar();
+		int []x = new int[10];
 		int a = 11;
 		int b = 11;
 
@@ -61,6 +68,7 @@ public class bar {
 		a = b % 13;
 		int z = 2;
 		z = z + 10 - 13 * 34 / 2 % 13 > a < b;
+		int y = z + 10 - 13 * 34 / 2 % 13 > a < b;
 		if(a == b){
 			boolean c = !a;
 			boolean d = c && a;

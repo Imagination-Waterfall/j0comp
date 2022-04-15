@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "category.h"
-#include "tree.h"
 #include "type.h"
+#include "tree.h"
 #include "symt.h"
 #include "j0gram.tab.h"
 

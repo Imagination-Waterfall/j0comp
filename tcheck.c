@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
-#include "tree.h"
 #include "type.h"
+#include "tree.h"
 #include "symt.h"
 #include "j0gram.tab.h"
 
@@ -214,7 +214,7 @@ void check_params(struct tree *n){
 }
 
 void loop_math(struct tree * n){
-	if(n == NULL)return currentType;
+	if(n == NULL)return;
 	for(int i = 0; i < n->nkids; i++){
 		loop_math(n->kids[i]);
 	}
@@ -353,9 +353,8 @@ void check_type(struct tree * n){
 				||(n->kids[2]->prodrule == AddExpr)
 				|| (n->kids[2]->prodrule == MulExpr)){
 				//relexpr, addexpr, mulexpr
-				currentType == NULL;
-				RightHandType = loop_math(n);
-			}else if(){
+				//currentType = NULL;
+				//RightHandType = loop_math(n);
 			}else{
 				RightHandType = literal_translation(n->kids[2]->prodrule);
 			}

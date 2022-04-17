@@ -18,6 +18,7 @@ typeptr long_typeptr = &long_type;
 typeptr string_typeptr = &string_type;
 typeptr char_typeptr = &integer_type;
 typeptr null_typeptr = &null_type;
+typeptr alcobjtype(struct tree*);
 char *typenam[] = {"null", "int", "class", "method"};
 
 typeptr alctype(int base)
@@ -41,20 +42,27 @@ typeptr alctype(int base)
  */
 typeptr alcfunctype(SymbolTable st, int type, struct tree * r)
 {
-   typeptr rv = alctype(type);
-   if (rv == NULL) return NULL;
-   rv->u.f.st = st;
-   /* fill in return type and paramlist by traversing subtrees */
-   if(type == MethodDecl){
-	   if(r->kids[0]->kids[2]->prodrule == MethodReturnVal){
-		   //r->kids[0]->kids[2]->kids[0]->prodrule
-		   rv->u.f.returntype = alctype(AssignArray);
-		   rv->u.f.returntype->u.a.elemtype = alctype(r->kids[0]->kids[2]->kids[0]->prodrule);
-	   }else{
-		   rv->u.f.returntype = alctype(r->kids[0]->kids[2]->prodrule);
-	   }
-   }
-   return rv;
+	typeptr rv = NULL;
+	//r should be prodrule == MethodHeader
+	if(type == MethodDecl){
+		rv = alctype(Method);
+		if (rv == NULL) return NULL;
+		rv->u.f.st = st;
+		/* fill in return type and paramlist by traversing subtrees */
+		if(r->kids[1]->prodrule == LSQBRAK){
+			//r->kids[0]->kids[2]->kids[0]->prodrule
+			rv->u.f.returntype = alctype(Array);
+			rv->u.f.returntype->u.a.elemtype = alctype(r->kids[0]->kids[2]->prodrule);
+		}else{
+			rv->u.f.returntype = alctype(r->kids[0]->kids[2]->prodrule);
+		}
+	}else{
+		rv = alctype(Constructor);
+		if (rv == NULL) return NULL;
+		rv->u.f.st = st;
+		rv->u.f.returntype = alcobjtype(r);
+	}
+	return rv;
 }
 
 typeptr alcclasstype (SymbolTable st, int type){
@@ -64,9 +72,16 @@ typeptr alcclasstype (SymbolTable st, int type){
     return rv;
 }
 
-typeptr alcarraytype(int type, struct tree * r){
-	typeptr rv = alctype(type);
-	rv->u.a.elemtype = alctype(r->kids[0]->prodrule);
+typeptr alcarraytype(int type){
+	typeptr rv = alctype(Array);
+	rv->u.a.elemtype = alctype(type);
+	return rv;
+}
+
+typeptr alcobjtype(struct tree * r){
+	typeptr rv = alctype(Object);
+	if (rv == NULL) return NULL;
+	rv->u.o.obj = r->kids[0]->leaf->text;
 	return rv;
 }
 
@@ -102,18 +117,18 @@ void loop_params(struct tree * r){
 		return;
 	}
 	if(r->prodrule == FormalParm){
-		//allocate param list and return
+		//allocate param list
 		nextpm = calloc(1, sizeof(struct param));
-		if(r->kids[0]->prodrule != AssignArray){
+		if(r->kids[1]->prodrule != AssignArray){
 			nextpm->name = r->kids[1]->leaf->text;
 			nextpm->type = alctype(r->kids[0]->prodrule);
 		}else{
-			if(r->kids[0]->kids[1]->prodrule == LSQBRAK){
-				nextpm->name = r->kids[0]->kids[3]->leaf->text;
+			if(r->kids[1]->kids[0]->prodrule == IDENTIFIER){
+				nextpm->name = r->kids[1]->kids[0]->leaf->text;
 			}else{
-				nextpm->name = r->kids[0]->kids[1]->leaf->text;
+				nextpm->name = r->kids[1]->kids[2]->leaf->text;
 			}
-			nextpm->type = alcarraytype(r->kids[0]->prodrule, r->kids[0]);
+			nextpm->type = alcarraytype(r->kids[0]->prodrule);
 		}
 		nextpm->next = NULL;
 		insert_params(nextpm);

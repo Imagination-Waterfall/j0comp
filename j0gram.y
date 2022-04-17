@@ -93,9 +93,9 @@ FormalParmListOpt: FormalParmList {$$ = $1;}
 FormalParmList: FormalParm {$$ = $1;}
 	| FormalParmList COMMA FormalParm {$$ = alctree(FormalParmList, "FormalParmList", 3, $1, $2, $3);};
 FormalParm: Type VarDeclarator {$$ = alctree(FormalParm, "FormalParm", 2, $1, $2);}
-	| Type AssignArray {$$ = alctree(FormalParm, "FormalParm", 1, $1);};
+	| Type AssignArray {$$ = alctree(FormalParm, "FormalParm", 2, $1, $2);};
 
-ConstructorDecl: ConstructorDeclarator Block {$$ = alctree(ConstructorDecl, "ConstructorDecl", 2, $1, $2);};
+ConstructorDecl: PUBLIC ConstructorDeclarator Block {$$ = alctree(ConstructorDecl, "ConstructorDecl", 3, $1, $2, $3);};
 ArgListOpt:  ArgList {$$ = $1;}
 	| {$$ = NULL;};
 ConstructorDeclarator: IDENTIFIER LPARAN FormalParmListOpt RPARAN {$$ = alctree(ConstructorDeclarator, "ConstructorDeclarator", 4, $1, $2, $3, $4);};

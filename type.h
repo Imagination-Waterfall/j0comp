@@ -34,6 +34,9 @@ typedef struct typeinfo {
 			int nparams;
 			struct param *parameters;
 		}f;
+		struct objinfo{
+			char *obj;
+		}o;
 	} u;
 } *typeptr;
 

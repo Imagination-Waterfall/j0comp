@@ -12,7 +12,7 @@ typedef enum{ClassDecl = 1000, ClassBody, ClassBodyDecls, ClassBodyDecl,FieldDec
 	LeftHandSide, AssignOp, UnarySolo, ArrayInit, ArrayOpts, ArrayEle, ArrayEleList,
 	AssignArray, ArrayAccess, StringInit, DeclHeader, AssignInit, AssignDecl} nonTerm;
 
-typedef enum {Class = 1000000, Method, Constructor, Array} predefined;
+typedef enum {Class = 1000000, Method, Constructor, Array, Object} predefined;
 /*typedef enum {ArrayPackage = AssignArray+1, StringPackage, System, InputStream,
 	out, print, println, charAt, equals, compareTo, length, toString, readj, in,
 	get, set} packages;*/

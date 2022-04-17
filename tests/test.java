@@ -2,24 +2,28 @@ public class bar {
 
 	public static int a;
 	public static int b = 10;
+	public static int []c;
+	public static int d[];
+	public static int []e = new int[1];
+	public static int f[] = {10, 30};
 	public static int y = a + 10 - 13 * 34 / 2 % 13 > a < b;
 	public static int []x = new int[10];
 	public static int w[] = new int[10];
-	/*public int a = 10;
-	public int u[];
-	public int []p;
-	public int b;*/
+	public static int u[];
+	public static int []p;
 
 	/*bar(int x){
 		a = x;
 	}*/
-	/*public static void test(int a, long b[], String c, char d, boolean e){
+	public bar(int b){
+		a = b;
+	}
+	public static void test(int a, long b[], String c, char d, boolean e){
 
 	}
-
-	public static int test2(){
+	public static int[] test2(){
 		return 10;
-	}*/
+	}
 	/*public static int[] ab() {
 		//int a[] = {20};
 		return new int[12];
@@ -47,19 +51,19 @@ public class bar {
 		//int a[] = {20};
 		return ae();
 	}*/
-	public static int d;
-	public static int main()
-	{
-		bar b = new bar();
-		int []x = new int[10];
-		int a = 11;
-		int b = 11;
+	//public static int d;
+	/*public static int[] foo(int z, long y){
 
-		/*long b = 11l;
-		String c = "test2";
-		char d = 't';
+	}*/
+	public static int main(int []a, int b[], long c)
+	{
+		int d[] = {10, 23};
+		int []f;
+		bar g = new bar();
+		bar h = new bar();
+		int []x = new int[10];
 		boolean e = false;
-		test(test2(), b, c, d, e);*/
+		test(test2(), b, c, d, e);
 
 		a = b + 10;
 		b = a - 13;
@@ -70,11 +74,11 @@ public class bar {
 		z = z + 10 - 13 * 34 / 2 % 13 > a < b;
 		int y = z + 10 - 13 * 34 / 2 % 13 > a < b;
 		if(a == b){
-			boolean c = !a;
-			boolean d = c && a;
-			boolean e = d || c;
-			boolean f = a < b;
-			boolean g = a > b;
+			boolean l = !a;
+			boolean i = c && a;
+			boolean j = d || c;
+			boolean m = a < b;
+			boolean o = a > b;
 
 		}
 

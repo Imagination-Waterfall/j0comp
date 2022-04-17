@@ -21,15 +21,18 @@ char *nonTermToStr(int i){
 			ret = "Method";
 			break;
 		}
-		case ConstructorDecl: {
+		case Constructor: {
 			ret = "Constructor";
 			break;
 		}
-		case AssignArray: {
+		case Array: {
 			ret = "Array";
 			break;
 		}
-
+		case Object: {
+			ret = "Object";
+			break;
+		}
 		case INT: {
 			ret = "int";
 			break;

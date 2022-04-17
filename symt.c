@@ -19,7 +19,8 @@ void semanticerror(char *s, struct tree* n);
 extern void freetree(struct tree *);
 extern typeptr alcfunctype(SymbolTable, int, struct tree *);
 extern typeptr alcclasstype (SymbolTable, int);
-extern typeptr alcarraytype(int, struct tree *);
+extern typeptr alcarraytype(int);
+extern typeptr alcobjtype(struct tree *);
 extern char *nonTermToStr(int);
 
 extern paramlist loop_params(struct tree*);
@@ -87,20 +88,40 @@ int hash(SymbolTable st, char *s)
  */
 int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct tree *r)
 {
-   //register int i;
-   int h;
-   struct sym_entry *se;
-   //int l;
+	//register int i;
+	int h;
+	struct sym_entry *se;
+	//int l;
+	h = hash(st, s);
+	for (se = st->tbl[h]; se != NULL; se = se->next){
+		if ((!strcmp(s, se->s))) {
+			/*
+			* A copy of the string is already in the table.
+			*/
+			return -1;
+		}
+	}
 
-   h = hash(st, s);
-   for (se = st->tbl[h]; se != NULL; se = se->next)
-      if ((!strcmp(s, se->s))) {
-         /*
-          * A copy of the string is already in the table.
-          */
-         return -1;
-      }
-   /*
+	//check Parameters
+	typeptr symbolType = NULL;
+	paramlist params;
+
+	if(current->parentSymbol != NULL){
+		symbolType = current->parentSymbol->type;
+		//printf("checking for: %s in %s\n", n->leaf->text, current->parentSymbol->s);
+		if(symbolType->basetype == Method || symbolType->basetype == Constructor){
+			//check parameters
+			params = symbolType->u.f.parameters;
+			while(params != NULL){
+				//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
+				if(strcmp(s, params->name) == 0){
+					return -1;
+				}
+				params = params->next;
+			}
+		}
+	}
+	/*
     * The string is not in the table. Add the copy from thFune
     *  buffer to the table.
     */
@@ -117,8 +138,17 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct t
 		   children->parentSymbol = se;
 		   break;
 	   }
-	   case MethodDecl:
-	   case ConstructorDecl:{
+	   case MethodDecl:{
+		   se->type = alcfunctype(children, type, r->kids[0]);
+		   se->type->u.f.parameters = NULL;
+		   head = NULL;
+		   loop_params(r->kids[0]);
+		   se->type->u.f.parameters = head;
+		   se->type->u.f.nparams = paramnums(&se->type->u.f.parameters);
+		   children->parentSymbol = se;
+		   break;
+	   }
+	   case ConstructorDeclarator:{
 		   se->type = alcfunctype(children, type, r);
 		   se->type->u.f.parameters = NULL;
 		   head = NULL;
@@ -129,7 +159,16 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct t
 		   break;
 	   }
 	   case AssignArray: {
-		   se->type = alcarraytype(type, r);
+		   if(r->prodrule == LocalVarDecl){
+			   se->type = alcarraytype(r->kids[0]->prodrule);
+		   }else{
+			   se->type = alcarraytype(r->kids[0]->kids[2]->prodrule);
+		   }
+		   break;
+	   }
+	   case IDENTIFIER: {
+		   se->type = alcobjtype(r);
+
 		   break;
 	   }
 	   default:
@@ -238,99 +277,86 @@ void populate_symboltables(struct tree * n)
 			break;
 		}
 		case MethodDecl: {
-			char *methodName = n->kids[0]->kids[3]->kids[0]->leaf->text;
+			char *methodName;
+			if(n->kids[0]->kids[1]->prodrule == MethodDeclarator){
+				methodName = n->kids[0]->kids[1]->kids[0]->leaf->text;
+			}else{
+				methodName = n->kids[0]->kids[3]->kids[0]->leaf->text;
+			}
 			//int type = n->kids[0]->kids[2]->leaf->category;
 			if(enter_newscope(methodName, MethodDecl, n) == -1){
-				semanticerror("Method Redefined:", n->kids[0]->kids[3]->kids[0]);
+				semanticerror("Method Redefined:", n);
 			}
 			break;
 		}
-		case ConstructorDecl: {
+		case ConstructorDeclarator: {
 			//printf("ConstructorDecl\n");
-			char *constructorName = n->kids[0]->kids[0]->leaf->text;
-			if(enter_newscope(constructorName, ConstructorDecl, n) == -1){
-				semanticerror("Constructor Redefined:", n->kids[0]->kids[0]);
-			}
-			break;
-		}
-		case LeftHandSide:{
-			int cat = n->kids[0]->prodrule;
-			char *varName;
-			if(cat == INT || cat == BOOL || cat == LONG || cat == STRING || cat == CHAR){
-				if(n->kids[1]->prodrule == IDENTIFIER){
-					varName = n->kids[1]->leaf->text;
-					if(insert_sym(current, varName, NULL, cat, NULL) == -1){
-						semanticerror("Symbol redefined", n->kids[1]);
-					}
-				}else if(n->kids[1]->prodrule == QualifiedName){
-					varName = n->kids[1]->kids[0]->leaf->text;
-					if(insert_sym(current, varName, NULL, cat, NULL) == -1){
-						semanticerror("Symbol redefined", n->kids[1]);
-					}
-				}else if(n->kids[3]->prodrule == IDENTIFIER){
-					varName = n->kids[3]->leaf->text;
-					if(insert_sym(current, varName, NULL, cat, NULL) == -1){
-						semanticerror("Symbol redefined", n->kids[1]);
-					}
-				}
+			char *constructorName = n->kids[0]->leaf->text;
+			if(enter_newscope(constructorName, ConstructorDeclarator, n) == -1){
+				semanticerror("Constructor Redefined:", n);
 			}
 			break;
 		}
 		case FieldDecl: {
-			if(n->kids[1]->prodrule != AssignArray && n->kids[1]->prodrule != Assignment){
-				int type = n->kids[1]->leaf->category;
-				char *varName = n->kids[2]->leaf->text;
-				if(insert_sym(current, varName, NULL, type, NULL) == -1){
-					semanticerror("Symbol redefined", n->kids[1]);
+			int type = n->kids[0]->kids[2]->leaf->category;
+			char *varName;
+
+			//get the name of the symbol
+			if(n->kids[1]->prodrule == AssignInit){
+				if(n->kids[1]->kids[0]->prodrule == AssignArray){
+					type = AssignArray;
+					if(n->kids[1]->kids[0]->kids[0]->prodrule == IDENTIFIER){
+						varName = n->kids[1]->kids[0]->kids[0]->leaf->text;
+					}else{
+						varName = n->kids[1]->kids[0]->kids[2]->leaf->text;
+					}
+				}else {
+					varName = n->kids[1]->kids[0]->leaf->text;
 				}
-				break;
+			}else if(n->kids[1]->prodrule == AssignArray){
+				type = AssignArray;
+				if(n->kids[1]->kids[0]->prodrule == IDENTIFIER){
+					varName = n->kids[1]->kids[0]->leaf->text;
+				}else{
+					varName = n->kids[1]->kids[2]->leaf->text;
+				}
+			}else{
+				varName = n->kids[1]->leaf->text;
+			}
+			if(insert_sym(current, varName, NULL, type, n) == -1){
+				semanticerror("Symbol redefined", n);
 			}
 			break;
 		}
 		case LocalVarDecl: {
 			int type = n->kids[0]->leaf->category;
-			char *varName = n->kids[1]->leaf->text;
-			//printf("%s\n", varName);
-			//insert_vars(n, type);
-			if(insert_sym(current, varName, NULL, type, NULL) == -1){
-				semanticerror("Symbol redefined", n->kids[1]);
-			}
-			break;
-		}
-		case AssignDecl: {
-			int type = n->kids[0]->leaf->category;
-			char *varName = n->kids[1]->leaf->text;
-			//printf("%s\n", varName);
-			//insert_vars(n, type);
-			if(insert_sym(current, varName, NULL, type, NULL) == -1){
-				semanticerror("Symbol redefined", n->kids[1]);
-			}
-			break;
-		}
-		case AssignArray: {
-			int type = AssignArray;//n->kids[0]->leaf->category;
 			char *varName;
-			foundFlag = 0;
-			if(n->kids[1]->prodrule != LSQBRAK){
+			if(n->kids[1]->prodrule == IDENTIFIER){
 				varName = n->kids[1]->leaf->text;
-			}else {
-				varName = n->kids[3]->leaf->text;
-			}
-			//check if its in the parameter ArgList
-			if(current->parentSymbol != NULL && current->parentSymbol->type->u.f.parameters != NULL){
-				paramlist check = current->parentSymbol->type->u.f.parameters;
-				while(check != NULL){
-					if(strcmp(varName, check->name) == 0){
-						foundFlag = 1;
-						break;
+			}else{
+				if(n->kids[1]->prodrule == AssignArray){
+					type = AssignArray;
+					if(n->kids[1]->kids[0]->prodrule == IDENTIFIER){
+						varName = n->kids[1]->kids[0]->leaf->text;
+					}else{
+						varName = n->kids[1]->kids[2]->leaf->text;
 					}
-					check = check->next;
+				}else if (n->kids[1]->prodrule == AssignInit && n->kids[1]->kids[0]->prodrule == AssignArray){
+					type = AssignArray;
+					if(n->kids[1]->kids[0]->kids[0]->prodrule == IDENTIFIER){
+						varName = n->kids[1]->kids[0]->kids[0]->leaf->text;
+					}else{
+						varName = n->kids[1]->kids[0]->kids[2]->leaf->text;
+					}
+				}else{
+					//just an assign init not an array
+					varName = n->kids[1]->kids[0]->leaf->text;
 				}
 			}
-			if(foundFlag == 0){
-				if (insert_sym(current, varName, NULL, type, n) == -1){
-					semanticerror("Symbol redefined", n->kids[1]);
-				}
+			//printf("%s\n", varName);
+			//insert_vars(n, type);
+			if(insert_sym(current, varName, NULL, type, n) == -1){
+				semanticerror("Symbol redefined", n);
 			}
 			break;
 		}
@@ -354,8 +380,8 @@ void populate_symboltables(struct tree * n)
 					foundFlag = 1;
 					break;
 				}
-				if(symbolType != NULL && (symbolType->basetype == MethodDecl
-					|| symbolType->basetype == ConstructorDecl)){
+				if(symbolType != NULL && (symbolType->basetype == Method
+					|| symbolType->basetype == Constructor)){
 					//check parameters
 					params = symbolType->u.f.parameters;
 					while(params != NULL){
@@ -446,7 +472,7 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 		printf("Parameters: \n");
 		while(params != NULL){
 			printf("\t%s, %s", params->name, nonTermToStr(params->type->basetype));
-			if(params->type->basetype == AssignArray){
+			if(params->type->basetype == Array){
 				printf(", %s", nonTermToStr(params->type->u.a.elemtype->basetype));
 			}
 			printf("\n");
@@ -457,14 +483,18 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 		ste = st->tbl[i];
 		while (ste != NULL) {
 			printf("%s, %s", ste->s, nonTermToStr(ste->type->basetype));
-			if(ste->type->basetype == AssignArray){
+			if(ste->type->basetype == Array && ste ->type->u.a.elemtype != NULL){
 				printf(", %s", nonTermToStr(ste->type->u.a.elemtype->basetype));
-			}
-			if(ste->type->basetype == MethodDecl){
-				printf(", %s", nonTermToStr(ste->type->u.f.returntype->basetype));
-				if(ste->type->u.f.returntype->basetype == AssignArray){
-					printf(", %s", nonTermToStr(ste->type->u.f.returntype->u.a.elemtype->basetype));
+			}else if(ste->type->basetype == Method){
+				if(ste->type->u.f.returntype != NULL){
+					printf(", %s", nonTermToStr(ste->type->u.f.returntype->basetype));
+
+					if(ste->type->u.f.returntype->basetype == Array){
+						printf(", %s", nonTermToStr(ste->type->u.f.returntype->u.a.elemtype->basetype));
+					}
 				}
+			}else if (ste->type->basetype == Object){
+				printf(", %s", ste->type->u.o.obj);
 			}
 			printf("\n");
 			ste = ste->next;
@@ -482,13 +512,12 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 				   printsymbols(ste->type->u.c.st, level+1, s, ste->s);
 				   break;
 			   }
-			   case MethodDecl:
 			   case Method:{
 				   s = "Method";
 				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
 				   break;
 			   }
-			   case ConstructorDecl:{
+			   case Constructor:{
 				   s = "Constructor";
 				   printsymbols(ste->type->u.f.st, level+1, s, ste->s);
 				   break;

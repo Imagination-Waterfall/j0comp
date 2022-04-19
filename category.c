@@ -61,6 +61,14 @@ char *nonTermToStr(int i){
 			ret = "void";
 			break;
 		}
+		case DOUBLE: {
+			ret = "double";
+			break;
+		}
+		case FLOAT: {
+			ret = "float";
+			break;
+		}
 		default:
 			ret = "Type Not Yet Defined";
 

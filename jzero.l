@@ -44,9 +44,11 @@ static		words++; chars += strlen(yytext); return(alctoken(STATIC));
 void		words++; chars += strlen(yytext); return(alctoken(VOID));
 while		words++; chars += strlen(yytext); return(alctoken(WHILE));
 String		words++; chars += strlen(yytext); return(alctoken(STRING));
+double		words++; chars += strlen(yytext); return(alctoken(DOUBLE));
+float		words++; chars += strlen(yytext); return(alctoken(FLOAT));
 true|false return(alctoken(BOOLLIT));
 null return(alctoken(NULLVAL));
-abstract|assert|byte|catch|const|do|enum|exports|extends|final|finally|goto|implements|import|interface|module|native|package|protected|requires|short|strictfp|super|synchronized|this|throw|throws|transient|try|var|volatile|private|instanceof|case|switch|default|continue|double|float	return(alctoken(ERR));
+abstract|assert|byte|catch|const|do|enum|exports|extends|final|finally|goto|implements|import|interface|module|native|package|protected|requires|short|strictfp|super|synchronized|this|throw|throws|transient|try|var|volatile|private|instanceof|case|switch|default|continue	return(alctoken(ERR));
 "="		chars += strlen(yytext); return(alctoken(EQUAL));
 "+"		chars += strlen(yytext); return(alctoken(PLUS));
 "-"		chars += strlen(yytext); return(alctoken(MINUS));
@@ -78,6 +80,8 @@ abstract|assert|byte|catch|const|do|enum|exports|extends|final|finally|goto|impl
 "#"|"$"|"@"|"\\"|"`"	return(alctoken(ERR));
 {DIGIT}+	words++; chars += strlen(yytext); return(alctoken(INTLIT)); /*int*/
 {DIGIT}+l	words++; chars += strlen(yytext); return(alctoken(LONGLIT)); /*long*/
+{DIGIT}+"."{DIGIT}+		words++; chars += strlen(yytext); return(alctoken(FLOATLIT)); /*float*/
+{DIGIT}+"."{DIGIT}+d	words++; chars += strlen(yytext); return(alctoken(DOUBLELIT)); /*double*/
 "'"{CHAR}"'"		words++; chars += strlen(yytext); return(alctoken(CHARLIT)); /*char*/
 "\""{CHAR}*"\""	words++; chars += strlen(yytext); return(alctoken(STRINGLIT)); /*string*/
 \n		rows++;
@@ -122,25 +126,14 @@ int alctoken(int c){
     	for(int i = 1; i < strlen(yytext)-1; i++){
     		if(yytext[i] == '\\'){
     			if(i+1 != strlen(yytext)){
-						if(yytext[i+1] == 'n'){
-							tmp[len] = '\n';
-						} else if(yytext[i+1] == 't'){
-							tmp[len] = '\t';
-						}else if(yytext[i+1] == '\"'){
-							tmp[len] = '\"';
-						}else if(yytext[i+1] == '\''){
-							tmp[len] = '\'';
-						}else{
-							free(yylval.treeptr->leaf->filename);
-							free(yylval.treeptr->leaf->text);
-							free(yylval.treeptr->leaf);
-							free(yylval.treeptr);
-							fprintf(stderr, "Line %d: Lexical Error: Invalid String %s\n",rows+1, yytext);
-							exit(1);
-							return ERR;
-						}
-						len++;
-						i++;
+					if(yytext[i+1] == 'n'){
+						tmp[len] = '\n';
+					} else if(yytext[i+1] == 't'){
+						tmp[len] = '\t';
+					}else if(yytext[i+1] == '\"'){
+						tmp[len] = '\"';
+					}else if(yytext[i+1] == '\''){
+						tmp[len] = '\'';
 					}else{
 						free(yylval.treeptr->leaf->filename);
 						free(yylval.treeptr->leaf->text);
@@ -150,15 +143,26 @@ int alctoken(int c){
 						exit(1);
 						return ERR;
 					}
-				}else{
-					tmp[len]= yytext[i];
 					len++;
+					i++;
+				}else{
+					free(yylval.treeptr->leaf->filename);
+					free(yylval.treeptr->leaf->text);
+					free(yylval.treeptr->leaf);
+					free(yylval.treeptr);
+					fprintf(stderr, "Line %d: Lexical Error: Invalid String %s\n",rows+1, yytext);
+					exit(1);
+					return ERR;
 				}
+			}else{
+				tmp[len]= yytext[i];
+				len++;
+			}
 	  	}
-    yylval.treeptr->leaf->sval = (char*) calloc(len+1, sizeof(char));
-    for(int i = 0; i < len+1; i++){
-    	yylval.treeptr->leaf->sval[i] = tmp[i];
-    }
+    	yylval.treeptr->leaf->sval = (char*) calloc(len+1, sizeof(char));
+    	for(int i = 0; i < len+1; i++){
+    		yylval.treeptr->leaf->sval[i] = tmp[i];
+    	}
 		free(tmp);
 		len = 0;
 	} else if (c == CHARLIT){
@@ -195,7 +199,14 @@ int alctoken(int c){
 			yylval.treeptr->leaf->ival = atoi(tmp);
 			free(tmp);
 		}
-	} else if (c == ERR){
+	} else if(c == FLOATLIT){
+		yylval.treeptr->leaf->dval = strtod(yytext, NULL);
+	}else if (c == DOUBLELIT){
+		tmp = (char*) calloc(strlen(yytext), sizeof(char));
+		strncpy(tmp, yytext, strlen(yytext)-1);
+		yylval.treeptr->leaf->dval = strtod(tmp, NULL);
+		free(tmp);
+	}else if (c == ERR){
 		free(yylval.treeptr->leaf->filename);
 		free(yylval.treeptr->leaf->text);
 		free(yylval.treeptr->leaf);

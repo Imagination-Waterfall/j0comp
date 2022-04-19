@@ -1,6 +1,55 @@
-public class bar {
+/*public class basic {
+	public static int x ;
+	public static void main(String []argv) {
+	   x = 5;
+	   x = x * x;
+	}
+}*/
 
+/*public class list {
+	public static void main(String []argv) {
+	   int [] a;
+	   a = new int [8];
+	   a[5] = a[4];
+	   System.out.println(""+a[5]);
+	}
+}*/
+
+/*public class undeclared {
+	public static void main(String []argv) {
+	   System.out.println(a);
+	}
+}*/
+
+/*public class redeclared {
+
+	public static int n1 ;
+	public static int n2 ;
+
+	public static void f(double n1) {
+	   double n2;
+	   int y;
+
+	   double n1;
+	   System.out.println(""+ n1);
+	   return;
+	}
+}*/
+
+public class test{
 	public static int a;
+
+	public static void main(){
+		int b;
+		int c = 10l;
+		float d;
+		double e = 3.4;
+	}
+}
+
+//public class bar {
+
+	/*public static int a;
 	public static int b = 10;
 	public static int []c;
 	public static int d[];
@@ -10,12 +59,12 @@ public class bar {
 	public static int []x = new int[10];
 	public static int w[] = new int[10];
 	public static int u[];
-	public static int []p;
+	public static int []p;*/
 
 	/*bar(int x){
 		a = x;
 	}*/
-	public bar(int b){
+	/*public bar(int b){
 		a = b;
 	}
 	public static void test(int a, long b[], String c, char d, boolean e){
@@ -23,7 +72,7 @@ public class bar {
 	}
 	public static int[] test2(){
 		return 10;
-	}
+	}*/
 	/*public static int[] ab() {
 		//int a[] = {20};
 		return new int[12];
@@ -55,7 +104,7 @@ public class bar {
 	/*public static int[] foo(int z, long y){
 
 	}*/
-	public static int main(int []a, int b[], long c)
+	/*public static int main(int []a, int b[], long c)
 	{
 		int d[] = {10, 23};
 		int []f;
@@ -80,7 +129,7 @@ public class bar {
 			boolean m = a < b;
 			boolean o = a > b;
 
-		}
+		}*/
 
 		/*//bar c; constructor tests*/
 		/*int a = 10;
@@ -152,6 +201,6 @@ public class bar {
 
 		}*/
 
-		return 0;
+		/*return 0;
 	}
-}
+}*/

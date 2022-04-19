@@ -285,12 +285,13 @@ void populate_symboltables(struct tree * n)
 			}
 			//int type = n->kids[0]->kids[2]->leaf->category;
 			if(enter_newscope(methodName, MethodDecl, n) == -1){
-				semanticerror("Method Redefined:", n);
+				semanticerror("Method Redefined:", n->kids[0]->kids[1]);
 			}
 			break;
 		}
 		case ConstructorDeclarator: {
 			//printf("ConstructorDecl\n");
+			semanticerror("Constructor Not Supported:", n);
 			char *constructorName = n->kids[0]->leaf->text;
 			if(enter_newscope(constructorName, ConstructorDeclarator, n) == -1){
 				semanticerror("Constructor Redefined:", n);
@@ -324,7 +325,7 @@ void populate_symboltables(struct tree * n)
 				varName = n->kids[1]->leaf->text;
 			}
 			if(insert_sym(current, varName, NULL, type, n) == -1){
-				semanticerror("Symbol redefined", n);
+				semanticerror("Symbol redefined", n->kids[1]);
 			}
 			break;
 		}
@@ -356,7 +357,7 @@ void populate_symboltables(struct tree * n)
 			//printf("%s\n", varName);
 			//insert_vars(n, type);
 			if(insert_sym(current, varName, NULL, type, n) == -1){
-				semanticerror("Symbol redefined", n);
+				semanticerror("Symbol redefined", n->kids[1]);
 			}
 			break;
 		}
@@ -430,7 +431,38 @@ void populate_symboltables(struct tree * n)
 				}
 				semanticerror("Symbol Undeclared", n);
 			}
-			//predefined check
+			//if it's here then the symbol is in the symbol table
+			SymbolTableEntry ste = lookup_st(check, n->leaf->text);
+			if(ste != NULL){
+				//check the current symbol table
+				n->type = lookup_st(check, n->leaf->text)->type;
+			}else{
+				/*
+				we know that there are parameters because if it's not in the
+				symboltable and we dont get a symbol undeclared error it needs
+				to be in the parameter list
+				*/
+				params = symbolType->u.f.parameters;
+				while(params != NULL){
+					//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
+					if(strcmp(n->leaf->text, params->name) == 0){
+						n->type = params->type;
+						break;
+					}
+					params = params->next;
+				}
+			}
+			break;
+		}
+		case INTLIT:
+		case BOOLLIT:
+		case LONGLIT:
+		case STRINGLIT:
+		case CHARLIT:
+		case FLOATLIT:
+		case DOUBLELIT:
+		case NULLVAL:{
+			n->type = alctype(n->prodrule);
 			break;
 		}
 	}

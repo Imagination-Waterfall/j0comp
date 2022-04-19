@@ -237,9 +237,7 @@ void loop_math(struct tree * n){
 
 void check_type(struct tree * n){
 
-	int i;
 	SymbolTableEntry ste;
-	typeptr currenttype;
 	if (n == NULL) return;
 	switch (n->prodrule) {
 		case ClassDecl:{
@@ -249,157 +247,48 @@ void check_type(struct tree * n){
 			break;
 		}
 		case MethodDecl:{
-			ste = lookup_st(currentTab, n->kids[0]->kids[3]->kids[0]->leaf->text);
+			ste = lookup_st(currentTab, n->kids[0]->kids[1]->kids[0]->leaf->text);
 			enter_scope(ste->type->u.f.st);
-			break;
-		}
-		case ConstructorDecl:{
-			ste = lookup_st(currentTab, n->kids[0]->kids[0]->leaf->text);
-			enter_scope(ste->type->u.f.st);
-			break;
-		}
-		case InstantiationExpr:{
-			currenttype = getPtr(n->kids[0]->leaf->text);
-			currentParams = currenttype->u.f.parameters;
-			numParams = 0;
-			check_params(n->kids[2]);
-			if(numParams < currenttype->u.f.nparams){
-				typeerror("Too Few Arguments", NULL, n);
-			}
-			break;
-		}
-		case ReturnStmt:{
-			currenttype = currentTab->parentSymbol->type->u.f.returntype;
-			int typereturned = -2;
-			if(n->kids[1]->prodrule == IDENTIFIER){
-				//identifire get that base type
-				typereturned = getPtr(n->kids[1]->leaf->text)->basetype;
-			}else if(n->kids[1]->nkids == 0){
-				//is a literal
-				typereturned = literal_translation(n->kids[1]->prodrule);
-			}else if(n->kids[1]->prodrule == ArrayInit){
-				//array type
-					typereturned = AssignArray;
-			}else if (n->kids[1]->prodrule == StringInit){
-				//string object made
-				typereturned = STRING;
-			}else{
-				//method call
-				typereturned = getPtr(n->kids[1]->kids[0]->leaf->text)->u.f.returntype->basetype;
-			}
-
-			if(currenttype->basetype != typereturned){
-				typeerror("Type Error", nonTermToStr(currenttype->basetype), n);
-			}
-
-			if(currenttype->basetype == AssignArray){
-				currenttype = currenttype->u.a.elemtype;
-
-				if(n->kids[1]->prodrule == ArrayInit){
-					//new int[intlint]
-					typereturned = n->kids[1]->kids[1]->prodrule;
-					add_array_size(currenttype, n->kids[1]);
-
-				}else if(n->kids[1]->prodrule == InstantiationExpr){
-					//methodcall(params)
-					typereturned = getPtr(n->kids[1]->kids[0]->leaf->text)->u.f.returntype->u.a.elemtype->basetype;
-					add_array_size(currenttype, n->kids[1]);
-				}else{
-					//identifire
-					typereturned = getPtr(n->kids[1]->leaf->text)->u.a.elemtype->basetype;
-				}
-				if(currenttype->basetype != typereturned){
-					//Error
-					typeerror("Type Error Array", nonTermToStr(currenttype->basetype), n);
-					//fprintf(stderr, "TypeErr\n");
-					//exit(3);
-				}
-			}
-			break;
-		}
-		case Assignment:{
-			int LeftHandType;
-			int RightHandType;
-			typeptr leftptr;
-			//Get the left hand side's types
-			if(n->kids[0]->prodrule ==  AssignArray){
-				if(n->kids[0]->kids[1]->prodrule != LSQBRAK){
-					leftptr = getPtr(n->kids[0]->kids[1]->leaf->text);
-					LeftHandType = leftptr->basetype;
-				}else{
-					leftptr = getPtr(n->kids[0]->kids[3]->leaf->text);
-					LeftHandType = leftptr->basetype;
-				}
-			}else if(n->kids[0]->prodrule == AssignDecl){
-				leftptr = getPtr(n->kids[0]->kids[1]->leaf->text);
-				LeftHandType = leftptr->basetype;
-			}else if(n->kids[0]->prodrule == ArrayAccess){
-				leftptr = getPtr(n->kids[0]->kids[0]->leaf->text);
-				LeftHandType = leftptr->u.a.elemtype->basetype;
-			}else{
-				leftptr = getPtr(n->kids[0]->leaf->text);
-				LeftHandType = leftptr->basetype;
-			}
-
-			//Get RightHandType
-			if(n->kids[2]->prodrule == InstantiationExpr){
-				//method call
-				RightHandType = getPtr(n->kids[2]->kids[0]->leaf->text)->u.f.returntype->basetype;
-			}else if(n->kids[2]->prodrule == IDENTIFIER){
-				RightHandType = getPtr(n->kids[2]->leaf->text)->basetype;
-			}else if(n->kids[2]->prodrule == ArrayAccess){
-				RightHandType = getPtr(n->kids[2]->kids[0]->leaf->text)->u.a.elemtype->basetype;
-			}else if ((n->kids[2]->prodrule == RelExpr)
-				||(n->kids[2]->prodrule == AddExpr)
-				|| (n->kids[2]->prodrule == MulExpr)){
-				//relexpr, addexpr, mulexpr
-				//currentType = NULL;
-				//RightHandType = loop_math(n);
-			}else{
-				RightHandType = literal_translation(n->kids[2]->prodrule);
-			}
-
-			if(LeftHandType != RightHandType){
-				//Error
-				typeerror("Type Error", nonTermToStr(LeftHandType), n);
-				//fprintf(stderr, "TypeErr\n");
-				//exit(3);
-			}
-
-			if(LeftHandType == AssignArray){
-				//both are arrays, now check array type
-				LeftHandType = leftptr->u.a.elemtype->basetype;
-
-				if(n->kids[2]->kids[1] == NULL){
-					RightHandType = LeftHandType;
-				}else if(n->kids[2]->kids[1]->prodrule == ArrayEle){
-					add_array_size(leftptr, n->kids[2]);
-					RightHandType = literal_translation(n->kids[2]->kids[1]->kids[2]->prodrule);
-				}else if(n->kids[2]->prodrule == InstantiationExpr){
-					add_array_size(leftptr, n->kids[2]);
-					RightHandType = getPtr(n->kids[2]->kids[0]->leaf->text)->u.f.returntype->u.a.elemtype->basetype;
-				}else{
-					add_array_size(leftptr, n->kids[2]);
-					RightHandType = literal_translation(n->kids[2]->kids[1]->prodrule);
-				}
-
-				if(LeftHandType != RightHandType){
-					//Error
-					typeerror("Type Error Array", nonTermToStr(LeftHandType), n);
-					//fprintf(stderr, "TypeErr\n");
-					//exit(3);
-				}
-			}
 			break;
 		}
 	}
-	for(i = 0; i < n->nkids; i++){
+	for(int i = 0; i < n->nkids; i++){
 		check_type(n->kids[i]);
 	}
 
 	switch (n->prodrule) {
-		case MethodDecl:
-		case ConstructorDecl:{
+		case AssignInit:{
+			n->type = n->kids[0]->type;
+			//printf("%s\n", nonTermToStr(n->type->basetype));
+			if(n->type->basetype != n->kids[2]->type->basetype){
+				/*
+				type promotion:
+				int->long
+				float->double
+
+				if promotion dosne't work then it's a type error
+				*/
+				int promoteFlag = 0;
+				switch(n->type->basetype){
+					case LONG:{
+						if(n->kids[2]->type->basetype == INT){
+							promoteFlag = 1;
+						}
+						break;
+					}
+					case DOUBLE:{
+						if(n->kids[2]->type->basetype == FLOAT){
+							promoteFlag = 1;
+						}
+						break;
+					}
+				}
+				if(promoteFlag == 0){
+					typeerror("Type Error", nonTermToStr(n->type->basetype), n);	
+				}
+			}
+		}
+		case MethodDecl:{
 			leave_scope();
 			break;
 		}

@@ -11,29 +11,43 @@ struct typeinfo bool_type = { BOOL };
 struct typeinfo long_type = { LONG };
 struct typeinfo string_type = { STRING };
 struct typeinfo char_type = { CHAR };
+struct typeinfo float_type = { FLOAT };
+struct typeinfo double_type = { DOUBLE };
 struct typeinfo null_type = { NULLVAL };
 typeptr integer_typeptr = &integer_type;
 typeptr bool_typeptr = &bool_type;
 typeptr long_typeptr = &long_type;
 typeptr string_typeptr = &string_type;
-typeptr char_typeptr = &integer_type;
+typeptr char_typeptr = &char_type;
+typeptr float_typeptr = &float_type;
+typeptr dobule_typeptr = &double_type;
 typeptr null_typeptr = &null_type;
 typeptr alcobjtype(struct tree*);
 char *typenam[] = {"null", "int", "class", "method"};
 
 typeptr alctype(int base)
 {
-   typeptr rv;
-   if (base == INT) return &integer_type;
-   if (base == BOOL) return &bool_type;
-   if (base == LONG) return &long_type;
-   if (base == STRING) return &string_type;
-   if (base == CHAR) return &char_type;
-   if (base == NULLVAL) return &null_type;
-   rv = (typeptr) calloc(1, sizeof(struct typeinfo));
-   if (rv == NULL) return rv;
-   rv->basetype = base;
-   return rv;
+	typeptr rv;
+	if (base == INT) return &integer_type;
+	if (base == BOOL) return &bool_type;
+	if (base == LONG) return &long_type;
+	if (base == STRING) return &string_type;
+	if (base == CHAR) return &char_type;
+	if (base == FLOAT) return &float_type;
+	if (base == DOUBLE) return &double_type;
+	if (base == NULLVAL) return &null_type;
+
+	if (base == INTLIT) return &integer_type;
+    if (base == BOOLLIT) return &bool_type;
+    if (base == LONGLIT) return &long_type;
+    if (base == STRINGLIT) return &string_type;
+    if (base == CHARLIT) return &char_type;
+    if (base == FLOATLIT) return &float_type;
+    if (base == DOUBLELIT) return &double_type;
+	rv = (typeptr) calloc(1, sizeof(struct typeinfo));
+	if (rv == NULL) return rv;
+	rv->basetype = base;
+	return rv;
 }
 
 /* in order for this to make any sense, you have to pass in the subtrees

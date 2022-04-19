@@ -36,7 +36,7 @@
 %token <treeptr> LSQBRAK RSQBRAK SEMI DOT MINUS NOT MULT DIV MOD
 %token <treeptr> PLUS GT LT EQUAL COMMA
 %token <treeptr> ERR CHAR LONG NEW
-%token <treeptr> LONGLIT CHARLIT
+%token <treeptr> LONGLIT CHARLIT DOUBLE DOUBLELIT FLOAT FLOATLIT
 
 %type <treeptr> ClassDecl ClassBody ClassBodyDecls ClassBodyDecl
 %type <treeptr> FieldDecl Type Name QualifiedName VarDecls
@@ -72,6 +72,8 @@ Type: INT {$$ = $1;}
 	| STRING {$$ = $1;}
 	| CHAR {$$ = $1;}
 	| VOID {$$ = $1;}
+	| DOUBLE {$$ = $1;}
+	| FLOAT {$$ = $1;}
 	| Name {$$ = $1;};
 
 Name: IDENTIFIER {$$ = $1;}
@@ -167,6 +169,8 @@ Literal: INTLIT	{$$ = $1;}
 	| LONGLIT {$$ = $1;}
 	| STRINGLIT {$$ = $1;}
 	| CHARLIT {$$ = $1;}
+	| DOUBLELIT {$$ = $1;}
+	| FLOATLIT {$$ = $1;}
 	| NULLVAL {$$ = $1;};
 
 InstantiationExpr: Name LPARAN ArgListOpt RPARAN {$$ = alctree(InstantiationExpr, "InstantiationExpr", 4, $1, $2, $3, $4);};
@@ -195,12 +199,14 @@ ArrayInit: NEW Type LSQBRAK ArrayOpts RSQBRAK {$$ = alctree(ArrayInit, "ArrayIni
 	| LBRACK ArrayEleList RBRACK {$$ = alctree(ArrayInit, "ArrayInit", 3, $1, $2, $3);};
 
 PostFixExpr: Primary {$$ = $1;}
-	| Name {$$ = $1;};
+	| Name {$$ = $1;}
+	| ArrayAccess {$$ = $1;};
 UnarySolo: Name INCREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);}
 	| Name DECREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);};
 UnaryExpr:  MINUS UnaryExpr {$$ = alctree(UnaryExpr, "UnaryExpr", 2, $1, $2);}
 	| NOT UnaryExpr {$$ = alctree(UnaryExpr, "UnaryExpr", 2, $1, $2);}
-	| PostFixExpr {$$ = $1;} | UnarySolo {$$ = $1;};
+	| PostFixExpr {$$ = $1;}
+	| UnarySolo {$$ = $1;};
 MulExpr: UnaryExpr {$$ = $1;}
 	| MulExpr MULT UnaryExpr {$$ = alctree(MulExpr, "MulExpr", 3, $1, $2, $3);}
     | MulExpr DIV UnaryExpr {$$ = alctree(MulExpr, "MulExpr", 3, $1, $2, $3);}
@@ -226,7 +232,6 @@ CondOrExpr: CondAndExpr {$$ = $1;}
 Expr: CondOrExpr {$$ = $1;}
 	| Assignment {$$ = $1;};
 Assignment: LeftHandSide AssignOp Expr {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);}
-	| LeftHandSide AssignOp ArrayAccess {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);}
 	| LeftHandSide AssignOp ArrayInit {$$ = alctree(Assignment, "Assignment", 3, $1, $2, $3);};
 LeftHandSide: Name {$$ = $1;}
 	| FieldAccess {$$ = $1;}

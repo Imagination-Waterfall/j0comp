@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 		}else if(strcmp(argv[1], "-symtab") == 0){
 			populate_symboltables(root);
 			printsymbols(globals, 0, "", "globals");
-			//check_type(root);
+			check_type(root);
 		}else if(strcmp(argv[1], "-tree") == 0){
 			printtree(root, 0);
 		}

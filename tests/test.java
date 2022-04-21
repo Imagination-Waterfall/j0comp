@@ -37,13 +37,20 @@
 }*/
 
 public class test{
-	public static int a;
-
+	public static long []threelen(long []a){
+		long []ret = a;
+		return ret;
+	}
+	public static double plusten(float []x, char y){
+		double ret = x[3] + y + 10;
+		return ret;
+	}
 	public static void main(){
-		int b;
-		int c = 10l;
-		float d;
-		double e = 3.4;
+		boolean a;
+		double x;
+		int []b = {34, 54, 12};
+		long []y = threelen(b);
+		x = plusten(threelen(b), '3');
 	}
 }
 

@@ -38,6 +38,7 @@
 %token <treeptr> ERR CHAR LONG NEW
 %token <treeptr> LONGLIT CHARLIT DOUBLE DOUBLELIT FLOAT FLOATLIT
 
+
 %type <treeptr> ClassDecl ClassBody ClassBodyDecls ClassBodyDecl
 %type <treeptr> FieldDecl Type Name QualifiedName VarDecls
 %type <treeptr> VarDeclarator MethodDecl MethodHeader
@@ -161,7 +162,7 @@ ReturnStmt: RETURN ExprOpt SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $
 	| RETURN ArrayInit SEMI {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);};
 
 Primary:  Literal {$$ = $1;}
-	| LPARAN Expr RPARAN {$$ = alctree(ReturnStmt, "ReturnStmt", 3, $1, $2, $3);}
+	| LPARAN Expr RPARAN {$$ = alctree(Primary, "Primary", 3, $1, $2, $3);}
 	| FieldAccess {$$ = $1;}
 	| MethodCall {$$ = $1;};
 Literal: INTLIT	{$$ = $1;}
@@ -202,7 +203,9 @@ PostFixExpr: Primary {$$ = $1;}
 	| Name {$$ = $1;}
 	| ArrayAccess {$$ = $1;};
 UnarySolo: Name INCREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);}
-	| Name DECREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);};
+	| Name DECREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);}
+	| ArrayAccess INCREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);}
+	| ArrayAccess DECREMENT {$$ = alctree(UnarySolo, "UnarySolo", 2, $1, $2);};
 UnaryExpr:  MINUS UnaryExpr {$$ = alctree(UnaryExpr, "UnaryExpr", 2, $1, $2);}
 	| NOT UnaryExpr {$$ = alctree(UnaryExpr, "UnaryExpr", 2, $1, $2);}
 	| PostFixExpr {$$ = $1;}
@@ -241,7 +244,8 @@ AssignOp: EQUAL {$$ = $1;}
 	| SUBASSIGN {$$ = $1;};
 
 AssignInit: VarDeclarator AssignOp Expr {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);}
-	| AssignArray AssignOp ArrayInit {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);};
+	| AssignArray AssignOp ArrayInit {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);}
+	| AssignArray AssignOp Expr {$$ = alctree(AssignInit, "AssignInit", 3, $1, $2, $3);};;
 
 
 AssignArray: LSQBRAK RSQBRAK IDENTIFIER {$$ = alctree(AssignArray, "AssignArray", 3, $1, $2, $3);}

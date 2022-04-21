@@ -285,7 +285,7 @@ void populate_symboltables(struct tree * n)
 			}
 			//int type = n->kids[0]->kids[2]->leaf->category;
 			if(enter_newscope(methodName, MethodDecl, n) == -1){
-				semanticerror("Method Redefined:", n->kids[0]->kids[1]);
+				semanticerror("Method Redeclared:", n->kids[0]->kids[1]);
 			}
 			break;
 		}
@@ -294,7 +294,7 @@ void populate_symboltables(struct tree * n)
 			semanticerror("Constructor Not Supported:", n);
 			char *constructorName = n->kids[0]->leaf->text;
 			if(enter_newscope(constructorName, ConstructorDeclarator, n) == -1){
-				semanticerror("Constructor Redefined:", n);
+				semanticerror("Constructor Redeclared:", n);
 			}
 			break;
 		}
@@ -325,7 +325,7 @@ void populate_symboltables(struct tree * n)
 				varName = n->kids[1]->leaf->text;
 			}
 			if(insert_sym(current, varName, NULL, type, n) == -1){
-				semanticerror("Symbol redefined", n->kids[1]);
+				semanticerror("Symbol Redeclared", n->kids[1]);
 			}
 			break;
 		}
@@ -357,7 +357,7 @@ void populate_symboltables(struct tree * n)
 			//printf("%s\n", varName);
 			//insert_vars(n, type);
 			if(insert_sym(current, varName, NULL, type, n) == -1){
-				semanticerror("Symbol redefined", n->kids[1]);
+				semanticerror("Symbol Redeclared", n->kids[1]);
 			}
 			break;
 		}
@@ -454,6 +454,13 @@ void populate_symboltables(struct tree * n)
 			}
 			break;
 		}
+		case INT:
+		case BOOL:
+		case LONG:
+		case STRING:
+		case CHAR:
+		case FLOAT:
+		case DOUBLE:
 		case INTLIT:
 		case BOOLLIT:
 		case LONGLIT:

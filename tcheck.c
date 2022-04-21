@@ -8,11 +8,12 @@
 #include "j0gram.tab.h"
 
 extern SymbolTable globals;
+extern typeptr alcarraytype(int);
 void typeerror(char *,char * , struct tree *);
+void check_promote(int , int, struct tree *);
 char *nonTermToStr(int);
 SymbolTable currentTab;
 paramlist currentParams;
-typeptr currentType;
 int numParams;
 
 void enter_scope(SymbolTable n){
@@ -26,218 +27,116 @@ void leave_scope(){
 	currentTab = currentTab->parent;
 }
 
-typeptr getPtr(char * n){
-	SymbolTableEntry ste;
-	SymbolTable check = currentTab;
-	typeptr ptr = NULL;
-	paramlist params;
-	//int foundFlag = 0;
-	//search symbol table
-	while(check != NULL){
-		ste = lookup_st(check, n);
-		if(ste == NULL){
-			//check parameters
-			if(check->parentSymbol != NULL){
-				params = check->parentSymbol->type->u.f.parameters;
-				while(params != NULL){
-					if(strcmp(n, params->name) == 0){
-						//found
-						return params->type;
-					}
-					params = params->next;
-				}
-			}
-			if(ptr != NULL){
-				break;
-			}
-		}else{
-			//symbol found
-			return ste->type;
-			break;
-		}
-		check = check->parent;
-	}
-	if(ptr == NULL){
-			//Symbol not in symbol table
-			//could be in one of the library functions
-	}
-	return ptr;
-}
-
-int literal_translation(int rule){
-	switch(rule){
-		case INTLIT:{
-			return INT;
-			break;
-		}
-		case BOOLLIT:{
-			return BOOL;
-			break;
-		}
-		case LONGLIT:{
-			return LONG;
-			break;
-		}
-		case STRINGLIT:{
-			return STRING;
-			break;
-		}
-		case CHARLIT:{
-			return CHAR;
-			break;
-		}
-		case ArrayInit:{
-			return AssignArray;
-			break;
-		}
-		case StringInit:{
-			return STRING;
-			break;
-		}
-	}
-	return rule;
-}
-
-int loop_array(typeptr ptr, struct tree *n){
-	int ret = 0;
-	if(n == NULL)return 0;
-
-	switch(n->prodrule){
-		case INTLIT:{
-
-			if(ptr->u.a.elemtype->basetype != INT){
-				typeerror("Type Error", nonTermToStr(ptr->u.a.elemtype->basetype), n);
-			}
-			return 1;
-			break;
-		}
-		case BOOLLIT:{
-			if(ptr->u.a.elemtype->basetype != BOOL){
-				typeerror("Type Error", nonTermToStr(ptr->u.a.elemtype->basetype), n);
-			}
-			return 1;
-			break;
-		}
-		case LONGLIT:{
-			if(ptr->u.a.elemtype->basetype != LONG){
-				typeerror("Type Error", nonTermToStr(ptr->u.a.elemtype->basetype), n);
-			}
-			return 1;
-			break;
-		}
-		case STRINGLIT:{
-			if(ptr->u.a.elemtype->basetype != STRING){
-				typeerror("Type Error", nonTermToStr(ptr->u.a.elemtype->basetype), n);
-			}
-			return 1;
-			break;
-		}
-		case CHARLIT:{
-			if(ptr->u.a.elemtype->basetype != CHAR){
-				typeerror("Type Error", nonTermToStr(ptr->u.a.elemtype->basetype), n);
-			}
-			return 1;
-			break;
-		}
-		case NULLVAL:{
-			return 1;
-			break;
-		}
-	}
-	for(int i = 0; i < n->nkids; i++){
-		ret += loop_array(ptr, n->kids[i]);
-	}
-
-	return ret;
-}
-
-void add_array_size(typeptr ptr, struct tree *n){
-	if(n->prodrule == ArrayInit){
-		if(n->kids[0]->prodrule == NEW){
-			ptr->u.a.size = n->kids[3]->leaf->ival;
-		}else{
-			ptr->u.a.size = loop_array(ptr, n);
-		}
-	}else if(n->prodrule == InstantiationExpr){
-		ptr->u.a.size = getPtr(n->kids[0]->leaf->text)->u.f.returntype->u.a.size;
-	}
-}
-
 void check_params(struct tree *n){
 	if(n == NULL) return;
-	if(currentParams == NULL) typeerror("Too Many Arguments", NULL, n);
-
-	switch(n->prodrule){
-		case INTLIT:
-		case LONGLIT:
-		case STRINGLIT:
-		case CHARLIT:
-		case BOOLLIT:{
-			numParams++;
-			if(currentParams->type->basetype != literal_translation(n->prodrule)){
-				typeerror("Type Error", nonTermToStr(currentParams->type->basetype), n);
-			}
-			currentParams = currentParams->next;
-			break;
-		}
-		case NULLVAL:{
-			numParams++;
-			currentParams = currentParams->next;
-			break;
-		}
-		case IDENTIFIER :{
-			//is an IDENTIFIER
-			typeptr idtype = getPtr(n->leaf->text);
-			typeptr paramtype = idtype;
-			numParams++;
-
-			if(paramtype->basetype == MethodDecl){
-				paramtype = paramtype->u.f.returntype;
-			}
-			if(currentParams->type->basetype != paramtype->basetype){
-				typeerror("Type Error", nonTermToStr(currentParams->type->basetype), n);
-			}
-
-			if(paramtype->basetype == AssignArray){
-				paramtype = paramtype->u.a.elemtype;
-				if(currentParams->type->u.a.elemtype->basetype != paramtype->basetype){
-					typeerror("Array Type Error", nonTermToStr(currentParams->type->u.a.elemtype->basetype), n);
-				}
-			}
-			currentParams = currentParams->next;
-			break;
-		}
-	}
 	for(int i = 0; i < n->nkids; i++){
 		check_params(n->kids[i]);
 	}
+	if(currentParams == NULL){
+		typeerror("Too Many Arugments", NULL, n);
+	}
+	if(n->prodrule == ArgList){
+		if(n->kids[0]->prodrule != ArgList){
+			//first in the list
+			if(n->kids[0]->type->basetype == currentParams->type->basetype){
+				//equal to the current parameter type
+				//check if they're arrays
+				if(currentParams->type->basetype == Array){
+					check_promote(currentParams->type->u.a.elemtype->basetype, n->kids[0]->type->u.a.elemtype->basetype, n);
+				}
+				currentParams = currentParams->next;
+				if(currentParams == NULL){
+					typeerror("Too Many Arugments", NULL, n);
+				}
+				if(n->kids[2]->type->basetype == currentParams->type->basetype){
+					//second kid equal to parameter type
+					//check if they're arrays
+					if(currentParams->type->basetype == Array){
+						check_promote(currentParams->type->u.a.elemtype->basetype, n->kids[2]->type->u.a.elemtype->basetype, n);
+					}
+					currentParams = currentParams->next;
+				}else{
+					check_promote(currentParams->type->basetype, n->kids[2]->type->basetype, n);
+					currentParams = currentParams->next;
+					//typeerror("Type Error", nonTermToStr(currentParams->type->basetype), n);
+				}
+			}else{
+				check_promote(currentParams->type->basetype, n->kids[0]->type->basetype, n);
+				currentParams = currentParams->next;
+				//typeerror("Type Error", nonTermToStr(currentParams->type->basetype), n);
+			}
+		}else{
+			//higher in the list
+			if(n->kids[2]->type->basetype == currentParams->type->basetype){
+				//second kid equal to parameter type
+				if(currentParams->type->basetype == Array){
+					check_promote(currentParams->type->u.a.elemtype->basetype, n->kids[2]->type->u.a.elemtype->basetype, n);
+				}
+				currentParams = currentParams->next;
+			}else{
+				check_promote(currentParams->type->basetype, n->kids[2]->type->basetype, n);
+				currentParams = currentParams->next;
+				//typeerror("Type Error", nonTermToStr(currentParams->type->basetype), n);
+			}
+		}
+	}
 }
 
-void loop_math(struct tree * n){
-	if(n == NULL)return;
-	for(int i = 0; i < n->nkids; i++){
-		loop_math(n->kids[i]);
-	}
+void check_promote(int a, int b, struct tree * n){
+	/*
+	type promotion:
+	int->long
+	int->float
+	int->double
+	long->float
+	long->double
+	float->double
 
-	switch(n->prodrule){
-		case INTLIT:
-		case LONGLIT:
-		case STRINGLIT:
-		case CHARLIT:
-		case BOOLLIT:{
-			//knows its type send type back up tree
+	if promotion dosne't work then it's a type error
+	*/
+	if(a == b){
+		return;
+	}
+	switch(a){
+		case CHAR:{
+			if(b == INT){
+				return;
+			}
 			break;
 		}
-		case IDENTIFIER :{
-			//is an IDENTIFIER send type back up tree
+		case INT:{
+			if(b == CHAR){
+				return;
+			}
+			break;
+		}
+		case LONG:{
+			if((b == INT) || (b == CHAR)){
+				return;
+			}
+			break;
+		}
+		case FLOAT:{
+			if((b == INT) || (b == LONG) || (b == CHAR)){
+				return;
+			}
+			break;
+		}
+		case DOUBLE:{
+			if((b == FLOAT) || (b == INT) || (b == LONG) || (b == CHAR)){
+				return;
+			}
 			break;
 		}
 	}
+	typeerror("Type Error", nonTermToStr(a), n);
 }
 
 void check_type(struct tree * n){
-
 	SymbolTableEntry ste;
+	int promoteFlag;
+	int type_left;
+	int type_right;
 	if (n == NULL) return;
 	switch (n->prodrule) {
 		case ClassDecl:{
@@ -246,8 +145,8 @@ void check_type(struct tree * n){
 			enter_scope(ste->type->u.c.st);
 			break;
 		}
-		case MethodDecl:{
-			ste = lookup_st(currentTab, n->kids[0]->kids[1]->kids[0]->leaf->text);
+		case MethodDeclarator:{
+			ste = lookup_st(currentTab, n->kids[0]->leaf->text);
 			enter_scope(ste->type->u.f.st);
 			break;
 		}
@@ -257,38 +156,233 @@ void check_type(struct tree * n){
 	}
 
 	switch (n->prodrule) {
-		case AssignInit:{
+		case AssignArray:{
+			if(n->kids[0]->prodrule == IDENTIFIER){
+				n->type = n->kids[0]->type;
+			}else{
+				n->type = n->kids[2]->type;
+			}
+			//printf("%s, %s\n", nonTermToStr(n->type->basetype), nonTermToStr(n->type->u.a.elemtype->basetype));
+			break;
+		}
+		case ArrayInit:{
+			n->type = alcarraytype(n->kids[1]->type->basetype);
+			break;
+		}
+		case UnarySolo:{
 			n->type = n->kids[0]->type;
-			//printf("%s\n", nonTermToStr(n->type->basetype));
-			if(n->type->basetype != n->kids[2]->type->basetype){
-				/*
-				type promotion:
-				int->long
-				float->double
-
-				if promotion dosne't work then it's a type error
-				*/
-				int promoteFlag = 0;
-				switch(n->type->basetype){
+			break;
+		}
+		case UnaryExpr:{
+			//needs to be numeric except for NOT which needs to be boolean
+			if((n->kids[0]->prodrule == NOT) && (n->kids[1]->type->basetype != BOOL)){
+				typeerror("Type Error", nonTermToStr(BOOL), n->kids[1]);
+			}else if((n->kids[0]->prodrule == MINUS) &&
+				(n->kids[1]->type->basetype != INT) &&
+				(n->kids[1]->type->basetype != LONG) &&
+				(n->kids[1]->type->basetype != FLOAT) &&
+				(n->kids[1]->type->basetype != DOUBLE) &&
+				(n->kids[1]->type->basetype != CHAR)){
+				typeerror("Type Error, Expected Numeric",NULL , n->kids[1]);
+			}else{
+				n->type = n->kids[1]->type;
+			}
+			break;
+		}
+		case Primary:{
+			n->type = n->kids[1]->type;
+			break;
+		}
+		case CondOrExpr:
+		case CondAndExpr:{
+			//both inputs need to be boolean
+			if((n->kids[0]->type->basetype == BOOL) && (n->kids[2]->type->basetype == BOOL)){
+				n->type = alctype(BOOL);
+			}else{
+				//error expected BOOLEAN
+				typeerror("Type Error", nonTermToStr(BOOL), n->kids[1]);
+			}
+			break;
+		}
+		case EqExpr:{
+			type_left = n->kids[0]->type->basetype;
+			type_right = n->kids[2]->type->basetype;
+			if(n->kids[0]->type->basetype == n->kids[2]->type->basetype){
+				//always works for types that are the same
+				n->type = alctype(BOOL);
+			}else if((type_left == INT || type_left == LONG ||
+				type_left == FLOAT || type_left == DOUBLE ||
+				type_left == CHAR) && (type_right == INT ||
+				type_right == LONG || type_right == FLOAT ||
+				type_right == DOUBLE || type_right == CHAR)){
+				//all numeric types are compatable... chars are also numeric :(
+				n->type = alctype(BOOL);
+			}else{
+				typeerror("Type Error, Types Not Compatable", NULL, n->kids[1]);
+			}
+			break;
+		}
+		case RelExpr:{
+			//both inputs need to be numeric ... chars are also numeric :(
+			type_left = n->kids[0]->type->basetype;
+			type_right = n->kids[2]->type->basetype;
+			if((type_left == INT || type_left == LONG ||
+				type_left == FLOAT || type_left == DOUBLE ||
+				type_left == CHAR) && (type_right == INT ||
+				type_right == LONG || type_right == FLOAT ||
+				type_right == DOUBLE || type_right == CHAR)){
+				n->type = alctype(BOOL);
+			}else{
+				typeerror("Type Error, Expected Numeric", NULL, n->kids[1]);
+			}
+			break;
+		}
+		case MulExpr:
+		case AddExpr:
+		case ArrayEle:{
+			//printf("%s, %s\n", nonTermToStr(n->kids[0]->type->basetype ), nonTermToStr(n->kids[2]->type->basetype));
+			//check for plus as a concatination
+			if(n->kids[1]->prodrule == PLUS){
+				if(n->kids[0]->type->basetype == STRING){
+					n->type = n->kids[0]->type;
+					break;
+				}else if(n->kids[2]->type->basetype == STRING){
+					n->type = n->kids[2]->type;
+					break;
+				}
+			}
+			//other checking
+			if(n->kids[0]->type->basetype == n->kids[2]->type->basetype){
+				n->type = n->kids[0]->type;
+				break;
+			}else{
+				promoteFlag = 0;
+				int a = n->kids[0]->type->basetype;
+				int b = n->kids[2]->type->basetype;
+				switch(a){
+					case CHAR:{
+						if(b == INT){
+							n->type = n->kids[0]->type;
+							promoteFlag = 1;
+						}
+						break;
+					}
+					case INT:{
+						if(b == CHAR){
+							n->type = n->kids[0]->type;
+							promoteFlag = 1;
+						}else if((b == LONG) || (b == FLOAT) || (b == DOUBLE)){
+							n->type = n->kids[2]->type;
+							promoteFlag = 1;
+						}
+					}
 					case LONG:{
-						if(n->kids[2]->type->basetype == INT){
+						if((b == INT) || (b == CHAR)){
+							n->type = n->kids[0]->type;
+							promoteFlag = 1;
+						}else if ((b == FLOAT) || (b == DOUBLE)){
+							n->type = n->kids[2]->type;
+							promoteFlag = 1;
+						}
+						break;
+					}
+					case FLOAT:{
+						if((b == INT) || (b == LONG) || (b == CHAR)){
+							n->type = n->kids[0]->type;
+							promoteFlag = 1;
+						}else if(b == DOUBLE){
+							n->type = n->kids[2]->type;
 							promoteFlag = 1;
 						}
 						break;
 					}
 					case DOUBLE:{
-						if(n->kids[2]->type->basetype == FLOAT){
+						if((b == FLOAT) || (b == INT) || (b == LONG) || (b == CHAR)){
+							n->type = n->kids[0]->type;
 							promoteFlag = 1;
 						}
 						break;
 					}
 				}
 				if(promoteFlag == 0){
-					typeerror("Type Error", nonTermToStr(n->type->basetype), n);	
+					typeerror("Type Error", nonTermToStr(a), n->kids[1]);
 				}
+				//check_promote(n->kids[0]->type->basetype, n->kids[1]->type->basetype);
 			}
+			break;
+		}
+		case Assignment:
+		case AssignInit:{
+			n->type = n->kids[0]->type;
+			//printf("%s, %s\n", nonTermToStr(n->kids[0]->type->basetype), nonTermToStr(n->kids[2]->type->basetype));
+			if((n->type->basetype == Array) && (n->kids[2]->type->basetype == Array)){
+				//printf("%s, %s\n", nonTermToStr(n->type->u.a.elemtype->basetype), nonTermToStr(n->kids[2]->type->u.a.elemtype->basetype));
+				check_promote(n->type->u.a.elemtype->basetype, n->kids[2]->type->u.a.elemtype->basetype, n);
+			}else{
+				//base types not equal check for pormo
+				check_promote(n->type->basetype, n->kids[2]->type->basetype, n);
+			}
+			break;
+		}
+		case ArrayAccess:{
+			if(n->kids[0]->type->basetype == Array){
+				n->type = n->kids[0]->type->u.a.elemtype;
+			}else{
+				typeerror("Not an array", NULL, n->kids[1]);
+			}
+			break;
+		}
+		case InstantiationExpr:{
+			n->type = n->kids[0]->type->u.f.returntype;
+			if(n->type == NULL){
+				n->type = n->kids[0]->type;
+			}
+			//check types for arugments
+			currentParams = n->kids[0]->type->u.f.parameters;
+
+			if(n->kids[2] == NULL){
+				if(currentParams != NULL){
+					typeerror("Too Few Arguments", NULL, n);
+				}
+			}else if(n->kids[2]->prodrule != ArgList){
+				//check its type
+				if(currentParams == NULL){
+					typeerror("Too Many Arguments", NULL, n);
+				}
+				if(currentParams->type->basetype == n->kids[2]->type->basetype){
+					if(currentParams->type->basetype == Array){
+						check_promote(currentParams->type->u.a.elemtype->basetype, n->kids[2]->type->u.a.elemtype->basetype, n);
+					}
+					currentParams = currentParams->next;
+				}else{
+					check_promote(currentParams->type->basetype, n->kids[2]->type->basetype, n);
+					currentParams = currentParams->next;
+				}
+				if(currentParams != NULL){
+					typeerror("Too Few Arguments", NULL, n);
+				}
+				return;
+			}else{
+				check_params(n->kids[2]);
+			}
+			if(currentParams != NULL){
+				//printf("%s\n", currentParams->name);
+				typeerror("Too Few Arguments", NULL, n);
+			}
+			break;
+		}
+		case ReturnStmt:{
+			int currentType = currentTab->parentSymbol->type->u.f.returntype->basetype;
+			int retType = n->kids[1]->type->basetype;
+			if((currentType == Array) && (retType == Array)){
+				currentType = currentTab->parentSymbol->type->u.f.returntype->u.a.elemtype->basetype;
+				retType = n->kids[1]->type->u.a.elemtype->basetype;
+			}
+			check_promote(currentType, retType, n);
+			break;
 		}
 		case MethodDecl:{
+			//printf("%d, %d\n", n->prodrule, MethodDecl);
 			leave_scope();
 			break;
 		}

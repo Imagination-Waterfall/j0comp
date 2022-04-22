@@ -171,6 +171,32 @@ int insert_sym(SymbolTable st, char *s, SymbolTable children, int type, struct t
 
 		   break;
 	   }
+	   case Method:{
+		   //is a built-in Method
+		   se->type = alctype(Method);
+		   if(strcmp(s, "get") == 0){
+			   //return type is set to the elemtype of the array
+		   }else if(strcmp(s, "set") == 0){
+			   se->type->u.f.returntype = alctype(VOID);
+		   }else if(strcmp(s, "charAt") == 0){
+			   se->type->u.f.returntype = alctype(CHAR);
+		   }else if(strcmp(s, "equals") == 0){
+			   se->type->u.f.returntype = alctype(BOOL);
+		   }else if(strcmp(s, "compareTo") == 0){
+			   se->type->u.f.returntype = alctype(INT);
+		   }else if(strcmp(s, "length") == 0){
+			   se->type->u.f.returntype = alctype(INT);
+		   }else if(strcmp(s, "toString") == 0){
+			   se->type->u.f.returntype = alctype(STRING);
+		   }else if(strcmp(s, "print") == 0){
+			   se->type->u.f.returntype = alctype(VOID);
+		   }else if(strcmp(s, "println") == 0){
+			   se->type->u.f.returntype = alctype(VOID);
+		   }else if(strcmp(s, "read") == 0){
+			   se->type->u.f.returntype = alctype(INT);
+		   }
+		   break;
+	   }
 	   default:
 	   	   se->type = alctype(type);
    }
@@ -232,6 +258,18 @@ void insert_vars(struct tree *n, int type)
 	}
 }
 
+void insert_var_list(struct tree *n, int type){
+	for(int i = 0; i < n->nkids; i++){
+		insert_var_list(n->kids[i], type);
+	}
+
+	if(n->prodrule == IDENTIFIER){
+		if(insert_sym(current, n->leaf->text, NULL, type, n) == -1){
+			semanticerror("Symbol Redeclared", n->kids[1]);
+		}
+	}
+}
+
 void populate_symboltables(struct tree * n)
 {
 	int i;
@@ -267,7 +305,7 @@ void populate_symboltables(struct tree * n)
 			insert_sym(current, "read", NULL, Method, NULL);
 			popscope();
 			popscope();
-			//------------------------------
+			//------------------------------get
 			enter_newscope("InputStream", Class, NULL);
 			insert_sym(current, "read", NULL, Method, NULL);
 			popscope();
@@ -349,13 +387,14 @@ void populate_symboltables(struct tree * n)
 					}else{
 						varName = n->kids[1]->kids[0]->kids[2]->leaf->text;
 					}
+				}else if(n->kids[1]->prodrule == VarDecls){
+					insert_var_list(n->kids[1], type);
+					break;
 				}else{
 					//just an assign init not an array
 					varName = n->kids[1]->kids[0]->leaf->text;
 				}
 			}
-			//printf("%s\n", varName);
-			//insert_vars(n, type);
 			if(insert_sym(current, varName, NULL, type, n) == -1){
 				semanticerror("Symbol Redeclared", n->kids[1]);
 			}
@@ -366,18 +405,20 @@ void populate_symboltables(struct tree * n)
 			//generic check
 			//printf("%s\n", n->leaf->text);
 			SymbolTable check = current;
+			SymbolTableEntry ste;
 			typeptr symbolType = NULL;
 			paramlist params;
 			foundFlag = 0;
 			//printf("current symbol: %s\n", n->leaf->text);
 
-			if(current->parentSymbol != NULL){
-				symbolType = current->parentSymbol->type;
+			if(check->parentSymbol != NULL){
+				symbolType = check->parentSymbol->type;
 				//printf("checking for: %s in %s\n", n->leaf->text, current->parentSymbol->s);
 			}
 			while(check != NULL){
-				if(lookup_st(check, n->leaf->text) != NULL){
+				if((ste = lookup_st(check, n->leaf->text)) != NULL){
 					//check current symbol table
+					n->type = ste->type;
 					foundFlag = 1;
 					break;
 				}
@@ -388,6 +429,7 @@ void populate_symboltables(struct tree * n)
 					while(params != NULL){
 						//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
 						if(strcmp(n->leaf->text, params->name) == 0){
+							n->type = params->type;
 							foundFlag = 1;
 							break;
 						}
@@ -403,55 +445,65 @@ void populate_symboltables(struct tree * n)
 			//Check packages
 			if(foundFlag == 0){
 				SymbolTable check = lookup_st(globals, "System")->type->u.c.st;
-				if(lookup_st(check, n->leaf->text) != NULL){
+				if((ste = lookup_st(check, n->leaf->text)) != NULL){
+					n->type = ste->type;
 					break;
 				}else{
 					check = lookup_st(check, "out")->type->u.c.st;
-					if(lookup_st(check, n->leaf->text) != NULL){
+					if((ste = lookup_st(check, n->leaf->text)) != NULL){
+						n->type = ste->type;
 						break;
 					}else{
 						check = lookup_st(globals, "System")->type->u.c.st;
 						check = lookup_st(check, "in")->type->u.c.st;
-						if(lookup_st(check, n->leaf->text) != NULL){
+						if((ste = lookup_st(check, n->leaf->text)) != NULL){
+							n->type = ste->type;
 							break;
 						}
 					}
 				}
 				check = lookup_st(globals, "InputStream")->type->u.c.st;
-				if(lookup_st(check, n->leaf->text) != NULL){
+				if((ste = lookup_st(check, n->leaf->text)) != NULL){
+					n->type = ste->type;
 					break;
 				}
 				check = lookup_st(globals, "String")->type->u.c.st;
-				if(lookup_st(check, n->leaf->text) != NULL){
+				if((ste = lookup_st(check, n->leaf->text)) != NULL){
+					n->type = ste->type;
 					break;
 				}
 				check = lookup_st(globals, "Array")->type->u.c.st;
-				if(lookup_st(check, n->leaf->text) != NULL){
+				if((ste = lookup_st(check, n->leaf->text)) != NULL){
+					n->type = ste->type;
 					break;
 				}
 				semanticerror("Symbol Undeclared", n);
 			}
 			//if it's here then the symbol is in the symbol table
-			SymbolTableEntry ste = lookup_st(check, n->leaf->text);
+			/*check = current;
+			ste = lookup_st(check, n->leaf->text);
 			if(ste != NULL){
 				//check the current symbol table
-				n->type = lookup_st(check, n->leaf->text)->type;
+				n->type = ste->type;
 			}else{
-				/*
-				we know that there are parameters because if it's not in the
-				symboltable and we dont get a symbol undeclared error it needs
-				to be in the parameter list
-				*/
-				params = symbolType->u.f.parameters;
-				while(params != NULL){
-					//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
-					if(strcmp(n->leaf->text, params->name) == 0){
-						n->type = params->type;
-						break;
+				while(check != NULL){*/
+					/*
+					we know that there are parameters because if it's not in the
+					symboltable and we dont get a symbol undeclared error it needs
+					to be in the parameter list
+					*/
+					/*params = check->parentSymbol->type->u.f.parameters;
+					while(params != NULL){
+						//printf("%s, %s\n", n->leaf->text, current->parentSymbol->s, params->name);
+						if(strcmp(n->leaf->text, params->name) == 0){
+							n->type = params->type;
+							break;
+						}
+						params = params->next;
 					}
-					params = params->next;
+					check = check->parent;
 				}
-			}
+			}*/
 			break;
 		}
 		case INT:

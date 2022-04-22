@@ -36,25 +36,58 @@
 	}
 }*/
 
-public class test{
-	public static long []threelen(long []a){
+//public class test{
+	/*public static long []threelen(long []a){
 		long []ret = a;
 		return ret;
 	}
 	public static double plusten(float []x, char y){
 		double ret = x[3] + y + 10;
 		return ret;
-	}
-	public static void main(){
-		boolean a;
+	}*/
+	//public static void main(){
+		//String x = "this is a test";
+		//int []b = new int[12];
+		/*boolean a;
 		double x;
 		int []b = {34, 54, 12};
 		long []y = threelen(b);
-		x = plusten(threelen(b), '3');
-	}
-}
+		x = plusten(threelen(b), '3');*/
+		//Array.set(new int[12], new int[3] , new int[3]);
+		//b.println();
+		/*int a = 4;
+		int b;
+		b = 3;
+		if(a == 3){
+			int c = 3;
+		}
+		if(a == 3){
+			int sa = 3;
+		}else{
+			b = 3;
+		}
 
-//public class bar {
+		if((a = b) == 3){
+			b = a;
+		}else if(a == b){
+			a = 0;
+			b = 0;
+		}else{
+			a = b;
+		}*/
+		/*int a = 3;
+		float b = 34.3;
+		while(b == a){
+			a++;
+		}*/
+		/*int i, a, b, c, d;
+		for(i = 45; i = 3; i++){
+
+		}
+	}
+}*/
+
+public class bar {
 
 	/*public static int a;
 	public static int b = 10;
@@ -68,18 +101,12 @@ public class test{
 	public static int u[];
 	public static int []p;*/
 
-	/*bar(int x){
-		a = x;
-	}*/
-	/*public bar(int b){
-		a = b;
-	}
 	public static void test(int a, long b[], String c, char d, boolean e){
 
 	}
 	public static int[] test2(){
-		return 10;
-	}*/
+		return new int[12];
+	}
 	/*public static int[] ab() {
 		//int a[] = {20};
 		return new int[12];
@@ -111,15 +138,17 @@ public class test{
 	/*public static int[] foo(int z, long y){
 
 	}*/
-	/*public static int main(int []a, int b[], long c)
+	public static int main()
 	{
+		int a;
+		int b;
+		long c;
 		int d[] = {10, 23};
 		int []f;
-		bar g = new bar();
-		bar h = new bar();
 		int []x = new int[10];
 		boolean e = false;
-		test(test2(), b, c, d, e);
+		f = test2();
+		test(f[3], x, "", 'd', false);
 
 		a = b + 10;
 		b = a - 13;
@@ -127,16 +156,16 @@ public class test{
 		b = a / 2;
 		a = b % 13;
 		int z = 2;
-		z = z + 10 - 13 * 34 / 2 % 13 > a < b;
-		int y = z + 10 - 13 * 34 / 2 % 13 > a < b;
+		z = z + 10 - 13 * 34 / 2 % 13;
+		int y = z + 10 - 13 * 34 / 2 % 13;
 		if(a == b){
-			boolean l = !a;
-			boolean i = c && a;
-			boolean j = d || c;
+			boolean l = !false;
+			boolean i = e && l;
+			boolean j = i || l;
 			boolean m = a < b;
 			boolean o = a > b;
 
-		}*/
+		}
 
 		/*//bar c; constructor tests*/
 		/*int a = 10;
@@ -208,6 +237,6 @@ public class test{
 
 		}*/
 
-		/*return 0;
+		return 0;
 	}
-}*/
+}

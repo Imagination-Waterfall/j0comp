@@ -13,6 +13,7 @@ void typeerror(char *,char * , struct tree *);
 void check_promote(int , int, struct tree *);
 char *nonTermToStr(int);
 SymbolTable currentTab;
+SymbolTableEntry currentEntry;
 paramlist currentParams;
 int numParams;
 
@@ -132,6 +133,124 @@ void check_promote(int a, int b, struct tree * n){
 	typeerror("Type Error", nonTermToStr(a), n);
 }
 
+int levels_deep(struct tree * n){
+	if(n == NULL) return 0;
+	if(n->prodrule != ArgList){
+		return 1;
+	}
+	int ret = 0;
+	int prev = ret;
+
+	for(int i = 0; i < n->nkids; i++){
+		ret = levels_deep(n->kids[i]);
+		if(ret > prev){
+			prev = ret;
+		}else{
+			ret = prev;
+		}
+	}
+
+	return ret+1;
+}
+
+void builtin_param_check(struct tree * n){
+	//n is going to be an InstantiationExpr
+	char *s = n->kids[0]->kids[2]->leaf->text;
+	struct tree *argList = n->kids[2];
+	int deep = levels_deep(argList);
+	printf("%d\n", deep);
+	if(strcmp(s, "set") == 0){
+		//check params for set
+		if(deep < 3){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep > 3){
+			typeerror("Too Many Arguments", NULL, n);
+		}else{
+			//printf("%s\n",nonTermToStr(argList->kids[0]->kids[0]->type->basetype) );
+			if(argList->kids[0]->kids[0]->type->basetype != Array){
+				typeerror("Type Error", "array", n);
+			}
+			if(argList->kids[0]->kids[2]->type->basetype != INT){
+				typeerror("Type Error", "int", n);
+			}
+			if(argList->kids[2]->type->basetype != argList->kids[0]->kids[0]->type->u.a.elemtype->basetype){
+				typeerror("Type Error", nonTermToStr(argList->kids[0]->kids[0]->type->u.a.elemtype->basetype), n);
+			}
+		}
+	}else if(strcmp(s, "charAt") == 0){
+		//check params for charAt
+		if(argList == NULL){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep == 1){
+			if(argList->type->basetype != INT){
+				typeerror("Type Error", "int", n);
+			}
+		}else{
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "equals") == 0){
+		//check params for equals
+		if(argList == NULL){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep == 1){
+			if(argList->type->basetype != STRING){
+				typeerror("Type Error", "string", n);
+			}
+		}else{
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "compareTo") == 0){
+		//check params for equals
+		if(argList == NULL){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep == 0){
+			if(argList->type->basetype != STRING){
+				typeerror("Type Error", "string", n);
+			}
+		}else{
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "length") == 0){
+		if(argList != NULL){
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "toString") == 0){
+		if(argList != NULL){
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "print") == 0){
+		if(argList == NULL){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep > 1){
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "println") == 0){
+		if(argList == NULL){
+			typeerror("Too Few Arguments", NULL, n);
+		}else if(deep > 1){
+			typeerror("Too Many Arguments", NULL, n);
+		}
+	}else if(strcmp(s, "read") == 0){
+		if(n->kids[0]->kids[0]->prodrule == IDENTIFIER){
+			//InputStream.read
+			if(argList == NULL){
+				typeerror("Too Few Arguments", NULL, n);
+			}else if(deep == 1){
+				if(argList->type->basetype != INT){
+					typeerror("Type Error", "int", n);
+				}
+			}else{
+				typeerror("Too Many Arguments", NULL, n);
+			}
+		}else{
+			//System.in.read
+			if(argList != NULL){
+				typeerror("Too Many Arguments", NULL, n);
+			}
+		}
+	}
+}
+
 void check_type(struct tree * n){
 	SymbolTableEntry ste;
 	int promoteFlag;
@@ -156,6 +275,26 @@ void check_type(struct tree * n){
 	}
 
 	switch (n->prodrule) {
+		case IfThenStmt:
+		case IfThenElseStmt:
+		case IfThenElseIfStmt:{
+			if(n->kids[2]->type->basetype != BOOL){
+				typeerror("Type Error", nonTermToStr(BOOL), n->kids[1]);
+			}
+			break;
+		}
+		case WhileStmt:{
+			if(n->kids[2]->type->basetype != BOOL){
+				typeerror("Type Error", nonTermToStr(BOOL), n->kids[1]);
+			}
+			break;
+		}
+		case ForStmt:{
+			if(n->kids[4]->type->basetype != BOOL){
+				typeerror("Type Error", nonTermToStr(BOOL), n->kids[1]);
+			}
+			break;
+		}
 		case AssignArray:{
 			if(n->kids[0]->prodrule == IDENTIFIER){
 				n->type = n->kids[0]->type;
@@ -314,6 +453,7 @@ void check_type(struct tree * n){
 		case Assignment:
 		case AssignInit:{
 			n->type = n->kids[0]->type;
+			//printf("%s\n", n->symbolname);
 			//printf("%s, %s\n", nonTermToStr(n->kids[0]->type->basetype), nonTermToStr(n->kids[2]->type->basetype));
 			if((n->type->basetype == Array) && (n->kids[2]->type->basetype == Array)){
 				//printf("%s, %s\n", nonTermToStr(n->type->u.a.elemtype->basetype), nonTermToStr(n->kids[2]->type->u.a.elemtype->basetype));
@@ -336,6 +476,11 @@ void check_type(struct tree * n){
 			n->type = n->kids[0]->type->u.f.returntype;
 			if(n->type == NULL){
 				n->type = n->kids[0]->type;
+			}
+
+			if(n->kids[0]->prodrule == QualifiedName){
+				builtin_param_check(n);
+				break;
 			}
 			//check types for arugments
 			currentParams = n->kids[0]->type->u.f.parameters;
@@ -379,6 +524,45 @@ void check_type(struct tree * n){
 				retType = n->kids[1]->type->u.a.elemtype->basetype;
 			}
 			check_promote(currentType, retType, n);
+			break;
+		}
+		case QualifiedName:{
+			//printf("check\n");
+			n->type = n->kids[0]->type;
+			if(n->type->basetype == Class){
+				if(n->kids[0]->nkids == 0){
+					//if it's a leaf then get the symbol from the table
+					currentEntry = lookup_st(globals, n->kids[0]->leaf->text);
+				}
+			}else if(n->type->basetype == STRING){
+				if(n->kids[0]->nkids == 0){
+					currentEntry = lookup_st(globals, "String");
+				}
+			}else{
+				typeerror("Type Cannot Be Dereferenced", NULL, n->kids[0]);
+			}
+			//printf("%s\n", n->kids[2]->leaf->text);
+			if(n->kids[2]->type->basetype == Class){
+				//no need to check if it's a leaf becuse the right child is always a leaf
+				//printf("%s\n", ste->s);
+				currentEntry = lookup_st(currentEntry->type->u.c.st, n->kids[2]->leaf->text);
+				//printf("%s\n", ste->s);
+				if(currentEntry == NULL){
+					typeerror("Symbol Not Found In Library", NULL, n->kids[2]);
+				}
+			}else if(n->kids[2]->type->basetype == Method){
+				//printf("%s\n", currentEntry->s);
+				if(strcmp(n->kids[2]->leaf->text, "get") == 0){
+					typeerror("get() Method Not Supported Since Type Casting Is Not Required In j0 Spec", NULL, n->kids[2]);
+				}
+				currentEntry = lookup_st(currentEntry->type->u.c.st, n->kids[2]->leaf->text);
+				if(currentEntry == NULL){
+					typeerror("Symbol Not Found In Library", NULL, n->kids[2]);
+				}
+				n->type = n->kids[2]->type->u.f.returntype;
+			}else{
+				typeerror("Symbol Not Found In Library", NULL, n->kids[2]);
+			}
 			break;
 		}
 		case MethodDecl:{

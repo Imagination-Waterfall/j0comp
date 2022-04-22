@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		yyparse();
-		populate_symboltables(root);
+		//populate_symboltables(root);
 		if(strcmp(argv[1], "-dot") == 0){
 			char *filenameTwoElectricBoogaloo = (char*) calloc(strlen(filename) + 4, sizeof(char));
 			strncpy(filenameTwoElectricBoogaloo, filename, strlen(filename));
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 			print_graph(root, filenameTwoElectricBoogaloo);
 			free(filenameTwoElectricBoogaloo);
 		}else if(strcmp(argv[1], "-symtab") == 0){
-			//populate_symboltables(root);
+			populate_symboltables(root);
 			printsymbols(globals, 0, "", "globals");
 			check_type(root);
 		}else if(strcmp(argv[1], "-tree") == 0){

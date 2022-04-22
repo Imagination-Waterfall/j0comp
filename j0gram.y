@@ -176,6 +176,8 @@ Literal: INTLIT	{$$ = $1;}
 
 InstantiationExpr: Name LPARAN ArgListOpt RPARAN {$$ = alctree(InstantiationExpr, "InstantiationExpr", 4, $1, $2, $3, $4);};
 ArgList: Expr {$$ = $1;}
+	| ArrayInit {$$ = $1;}
+	| ArgList COMMA ArrayInit {$$ = alctree(ArgList, "ArgList", 3, $1, $2, $3);};
 	| ArgList COMMA Expr {$$ = alctree(ArgList, "ArgList", 3, $1, $2, $3);};
 FieldAccess: Primary DOT IDENTIFIER {$$ = alctree(FieldAccess, "FieldAccess", 3, $1, $2, $3);};
 

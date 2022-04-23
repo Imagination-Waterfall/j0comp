@@ -9,6 +9,7 @@
 
 extern SymbolTable globals;
 extern typeptr alcarraytype(int);
+extern typeptr alcobjtype(struct tree*);
 void typeerror(char *,char * , struct tree *);
 void check_promote(int , int, struct tree *);
 char *nonTermToStr(int);
@@ -453,11 +454,16 @@ void check_type(struct tree * n){
 		case Assignment:
 		case AssignInit:{
 			n->type = n->kids[0]->type;
+
 			//printf("%s\n", n->symbolname);
 			//printf("%s, %s\n", nonTermToStr(n->kids[0]->type->basetype), nonTermToStr(n->kids[2]->type->basetype));
 			if((n->type->basetype == Array) && (n->kids[2]->type->basetype == Array)){
 				//printf("%s, %s\n", nonTermToStr(n->type->u.a.elemtype->basetype), nonTermToStr(n->kids[2]->type->u.a.elemtype->basetype));
 				check_promote(n->type->u.a.elemtype->basetype, n->kids[2]->type->u.a.elemtype->basetype, n);
+			}else if((n->type->basetype == Object) && (n->kids[2]->type->basetype == Object)){
+				if(strcmp(n->type->u.o.obj, n->kids[2]->type->u.o.obj) != 0){
+					typeerror("Type Error", n->type->u.o.obj, n->kids[1]);
+				}
 			}else{
 				//base types not equal check for pormo
 				check_promote(n->type->basetype, n->kids[2]->type->basetype, n);
@@ -472,12 +478,25 @@ void check_type(struct tree * n){
 			}
 			break;
 		}
+		case StringInit:{
+			n->type = alctype(STRING);
+			break;
+		}
+		case MethodCall:{
+			n->type = n->kids[1]->type;
+			break;
+		}
 		case InstantiationExpr:{
 			n->type = n->kids[0]->type->u.f.returntype;
-			if(n->type == NULL){
-				n->type = n->kids[0]->type;
-			}
+			if(n->type == NULL) n->type = n->kids[0]->type;
 
+			if(n->type->basetype == ClassDecl){
+				n->type = alcobjtype(n);
+				if(n->kids[2] != NULL){
+					typeerror("Only Default Constructors Supported", NULL, n);
+				}
+				break;
+			}
 			if(n->kids[0]->prodrule == QualifiedName){
 				builtin_param_check(n);
 				break;

@@ -89,17 +89,17 @@
 
 public class bar {
 
-	/*public static int a;
+	public static int a;
 	public static int b = 10;
 	public static int []c;
 	public static int d[];
 	public static int []e = new int[1];
 	public static int f[] = {10, 30};
-	public static int y = a + 10 - 13 * 34 / 2 % 13 > a < b;
+	public static boolean y = a + 10 - 13 * 34 / 2 % 13 > b;
 	public static int []x = new int[10];
 	public static int w[] = new int[10];
 	public static int u[];
-	public static int []p;*/
+	public static int []p;
 
 	public static void test(int a, long b[], String c, char d, boolean e){
 
@@ -140,8 +140,8 @@ public class bar {
 	}*/
 	public static int main()
 	{
-		int a;
-		int b;
+		//bar b = new bar();
+		//String a = new String("String");
 		long c;
 		int d[] = {10, 23};
 		int []f;

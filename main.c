@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
 		}
 		yyparse();
 		populate_symboltables(root);
+		//check_type(root);
 		if(strcmp(argv[1], "-dot") == 0){
 			char *filenameTwoElectricBoogaloo = (char*) calloc(strlen(filename) + 4, sizeof(char));
 			strncpy(filenameTwoElectricBoogaloo, filename, strlen(filename));

@@ -73,6 +73,9 @@ typeptr alcfunctype(SymbolTable st, int type, struct tree * r)
 			//r->kids[0]->kids[2]->kids[0]->prodrule
 			rv->u.f.returntype = alctype(Array);
 			rv->u.f.returntype->u.a.elemtype = alctype(r->kids[0]->kids[2]->prodrule);
+		}else if(r->kids[0]->kids[2]->prodrule == IDENTIFIER){
+			rv->u.f.returntype = alctype(Object);
+			rv->u.f.returntype->u.o.obj = r->kids[0]->kids[2]->leaf->text;
 		}else{
 			rv->u.f.returntype = alctype(r->kids[0]->kids[2]->prodrule);
 		}
@@ -141,7 +144,12 @@ void loop_params(struct tree * r){
 		nextpm = calloc(1, sizeof(struct param));
 		if(r->kids[1]->prodrule != AssignArray){
 			nextpm->name = r->kids[1]->leaf->text;
-			nextpm->type = alctype(r->kids[0]->prodrule);
+			if(r->kids[0]->prodrule == IDENTIFIER){
+				nextpm->type = alctype(Object);
+				nextpm->type->u.o.obj = r->kids[0]->leaf->text;
+			}else{
+				nextpm->type = alctype(r->kids[0]->prodrule);
+			}
 		}else{
 			if(r->kids[1]->kids[0]->prodrule == IDENTIFIER){
 				nextpm->name = r->kids[1]->kids[0]->leaf->text;

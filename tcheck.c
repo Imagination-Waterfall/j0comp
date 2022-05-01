@@ -557,6 +557,10 @@ void check_type(struct tree * n){
 				if(n->kids[0]->nkids == 0){
 					currentEntry = lookup_st(globals, "String");
 				}
+			}else if(n->type->basetype == Object){
+				if(n->kids[0]->nkids == 0){
+					currentEntry = lookup_st(globals, n->type->u.o.obj);
+				}
 			}else{
 				typeerror("Type Cannot Be Dereferenced", NULL, n->kids[0]);
 			}
@@ -580,7 +584,12 @@ void check_type(struct tree * n){
 				}
 				n->type = n->kids[2]->type->u.f.returntype;
 			}else{
-				typeerror("Symbol Not Found In Library", NULL, n->kids[2]);
+				//must be IDENTIFIER or random thing just look it up in the current entry
+				currentEntry = lookup_st(currentEntry->type->u.c.st, n->kids[2]->leaf->text);
+				n->type = n->kids[2]->type;
+				if(currentEntry == NULL){
+					typeerror("Symbol Not Found In Library", NULL, n->kids[2]);
+				}
 			}
 			break;
 		}

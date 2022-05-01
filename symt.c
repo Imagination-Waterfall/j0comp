@@ -565,6 +565,8 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 			printf("\t%s, %s", params->name, nonTermToStr(params->type->basetype));
 			if(params->type->basetype == Array){
 				printf(", %s", nonTermToStr(params->type->u.a.elemtype->basetype));
+			}else if(params->type->basetype == Object){
+				printf(", %s", params->type->u.o.obj);
 			}
 			printf("\n");
 			params = params->next;
@@ -582,6 +584,8 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 
 					if(ste->type->u.f.returntype->basetype == Array){
 						printf(", %s", nonTermToStr(ste->type->u.f.returntype->u.a.elemtype->basetype));
+					}else if(ste->type->u.f.returntype->basetype == Object){
+						printf(", %s", ste->type->u.f.returntype->u.o.obj);
 					}
 				}
 			}else if (ste->type->basetype == Object){

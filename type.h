@@ -5,6 +5,7 @@ typedef struct param {
    char *name;
    struct typeinfo *type;
    struct param *next;
+   struct addr *address;
    } *paramlist;
 
 /* base types. In the real thing, there will be many more base types */

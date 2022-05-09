@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
-#include "type.h"
 #include "tree.h"
 #include "symt.h"
 #include "j0gram.tab.h"
@@ -568,6 +567,9 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 			}else if(params->type->basetype == Object){
 				printf(", %s", params->type->u.o.obj);
 			}
+			if(params->address != NULL){
+				printf("\t Addr: %s, %d", regionname(params->address->region), params->address->offset);
+			}
 			printf("\n");
 			params = params->next;
 		}
@@ -590,6 +592,9 @@ void printsymbols(SymbolTable st, int level, char *type, char *name)
 				}
 			}else if (ste->type->basetype == Object){
 				printf(", %s", ste->type->u.o.obj);
+			}
+			if(ste->address != NULL){
+				printf("\t Addr: %s, %d", regionname(ste->address->region), ste->address->offset);
 			}
 			printf("\n");
 			ste = ste->next;

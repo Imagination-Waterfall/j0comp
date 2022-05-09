@@ -14,6 +14,7 @@ typedef struct sym_table {
    struct sym_entry **tbl;
    struct sym_entry *parentSymbol; /* pointer to the symbol this table belongs to */
    /* more per-scope/per-symbol-table attributes go here */
+   int maxoffset;
    } *SymbolTable;
 
 /*
@@ -24,6 +25,7 @@ typedef struct sym_entry {
    char *s;				/* string */
    /* more symbol attributes go here for code generation */
    typeptr type;
+   struct addr *address;
    struct sym_entry *next;
 } *SymbolTableEntry;
 

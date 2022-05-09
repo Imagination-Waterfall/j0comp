@@ -86,7 +86,6 @@
 		}
 	}
 }*/
-
 public class bar {
 
 	public static int a;

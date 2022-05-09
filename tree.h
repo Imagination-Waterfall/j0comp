@@ -1,3 +1,6 @@
+#include "type.h"
+#include "tac.h"
+
 struct token {
 	int category;
 	char *text;
@@ -21,4 +24,17 @@ struct tree {
 	struct tree *kids[9];
 	struct token *leaf;
 	typeptr type;
+
+	struct addr *first, *follow;
+	struct addr *onTrue, *onFalse;
+	struct addr *address;
+	struct instr *instructions;
 };
+
+void assign_addr(struct tree *);
+void insert_addr(struct tree *);
+void assign_first(struct tree *);
+void assign_follow(struct tree *);
+void assign_onTrue(struct tree *);
+void assign_onFalse(struct tree *);
+void assign_labels(struct tree *);

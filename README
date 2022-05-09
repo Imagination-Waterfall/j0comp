@@ -1,0 +1,19 @@
+Working Items:
+	Datatypes:
+		Integers
+
+	Operators:
+	+, -, *, /, %, --, ++
+	>, <, <=, >=, ==, !=, &&
+
+	Control Flow:
+	If statements (no else or else if)
+
+Errors:
+	-Output file will be in the same directory as the inputfile.
+	-Literally everything else in j0 spec doesn't generate code
+
+I've included test cases for the things I got to work. They are in /test/hw6testcases.
+
+Apologies for the incompleteness of this homework, I messed up on type checking
+and it snowballed from there.

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
-#include "type.h"
 #include "tree.h"
 #include "symt.h"
 
@@ -19,6 +18,7 @@ extern void populate_symboltables(struct tree *);
 extern void freetree(struct tree *);
 extern void print_graph(struct tree *, char *);
 extern void check_type(struct tree *);
+extern void printInstr(struct instr *, char *);
 extern SymbolTable global;
 char* filename;
 
@@ -55,6 +55,9 @@ int main(int argc, char **argv) {
 
 		yyparse();
 		populate_symboltables(root);
+		check_type(root);
+		assign_labels(root);
+		printInstr(root->instructions, filename);
 	}else if(argc == 3){
 		//check for filename
 		if(strlen(argv[2]) < 5){
@@ -84,7 +87,9 @@ int main(int argc, char **argv) {
 		}
 		yyparse();
 		populate_symboltables(root);
-		//check_type(root);
+		check_type(root);
+		assign_labels(root);
+		printInstr(root->instructions, filename);
 		if(strcmp(argv[1], "-dot") == 0){
 			char *filenameTwoElectricBoogaloo = (char*) calloc(strlen(filename) + 4, sizeof(char));
 			strncpy(filenameTwoElectricBoogaloo, filename, strlen(filename));
@@ -94,12 +99,12 @@ int main(int argc, char **argv) {
 		}else if(strcmp(argv[1], "-symtab") == 0){
 			//populate_symboltables(root);
 			printsymbols(globals, 0, "", "globals");
-			check_type(root);
+			//check_type(root);
 		}else if(strcmp(argv[1], "-tree") == 0){
 			printtree(root, 0);
 		}
 	}else{
-		printf("USAGE: ./j0 input_file\n");
+		printf("USAGE: ./j0 [-flags] input_file\n");
 		return 0;
 	}
 

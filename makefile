@@ -1,5 +1,5 @@
-j0: tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o tcheck.o main.o
-	gcc -g -Og -Wall -o j0 tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o tcheck.o main.o
+j0: tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o tcheck.o tac.o codegen.o main.o
+	gcc -g -Og -Wall -o j0 tree.o lex.yy.o j0gram.tab.o type.o category.o symt.o tcheck.o tac.o codegen.o main.o
 
 main.o: main.c category.h tree.h symt.h
 	gcc -g -Og -Wall -c main.c
@@ -30,6 +30,12 @@ category.o: category.c category.h j0gram.tab.h
 
 tcheck.o: tcheck.c
 	gcc -c -g -Wall tcheck.c
+
+tac.o: tac.c tac.h
+	gcc -c -g -Wall tac.c
+
+codegen.o: codegen.c
+	gcc -c -g -Wall codegen.c
 
 clean:
 	rm *.o j0gram.tab.c j0gram.tab.h lex.yy.c j0gram.output j0

@@ -3,7 +3,6 @@
 %{
 	#include "category.h"
 	#include "j0gram.tab.h"
-	#include "type.h"
 	#include "tree.h"
 	extern char *filename;
 	extern int serial;

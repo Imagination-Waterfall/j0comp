@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "category.h"
-#include "type.h"
 #include "tree.h"
 #include "symt.h"
 #include "j0gram.tab.h"
@@ -159,7 +158,7 @@ void builtin_param_check(struct tree * n){
 	char *s = n->kids[0]->kids[2]->leaf->text;
 	struct tree *argList = n->kids[2];
 	int deep = levels_deep(argList);
-	printf("%d\n", deep);
+	//printf("%d\n", deep);
 	if(strcmp(s, "set") == 0){
 		//check params for set
 		if(deep < 3){

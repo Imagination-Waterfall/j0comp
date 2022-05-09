@@ -1,7 +1,6 @@
 %{
 	#include <stdio.h>
 	#include "category.h"
-	#include "type.h"
 	#include "tree.h"
 	extern int yylex();
 	extern int yyerror(char *s);
